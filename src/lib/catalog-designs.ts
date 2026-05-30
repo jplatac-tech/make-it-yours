@@ -172,6 +172,18 @@ export type CatalogDesignGroup = {
 }
 
 /** Diseños agrupados por estilo, en orden de DESIGN_CATEGORIES */
+/** Muestra en la home (mezcla de categorías) */
+export function getFeaturedHomeDesigns(limit = 16): CatalogDesign[] {
+  const out: CatalogDesign[] = []
+  for (const group of getCatalogDesignGroups()) {
+    for (const design of group.designs) {
+      if (out.length >= limit) return out
+      out.push(design)
+    }
+  }
+  return out
+}
+
 export function getCatalogDesignGroups(): CatalogDesignGroup[] {
   const byCategory = new Map<DesignCategoryId, CatalogDesign[]>()
 

@@ -4,11 +4,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useEditorDesktopLayout } from '../../hooks/use-media-query'
-import {
-  EditorMobileDock,
-  MOBILE_DOCK_PANEL_MAX,
-  type MobileDockTab,
-} from './editor-mobile-dock'
+import { EditorMobileDock, type MobileDockTab } from './editor-mobile-dock'
 import { getTemplateById } from '../../lib/design-templates'
 import { cloneShapesWithNewIds } from '../../lib/start-editor'
 import {
@@ -98,7 +94,7 @@ export function DesignStudio() {
   const [productColor, setProductColor] = useState<ProductColorValue>('WHITE')
   const [printZone, setPrintZone] = useState<PrintZoneValue>('FRONT')
   const [activePanel, setActivePanel] = useState<EditorPanelId>('designs')
-  const [mobileTab, setMobileTab] = useState<MobileDockTab | null>(null)
+  const [mobileTab, setMobileTab] = useState<MobileDockTab>('designs')
   const isDesktop = useEditorDesktopLayout()
   const mockupFitRef = useRef<HTMLDivElement | null>(null)
   const [mockupFitScale, setMockupFitScale] = useState(1)
@@ -689,10 +685,6 @@ export function DesignStudio() {
     formatDesignQuoteMessage(designJson, 'Suéter / crewneck personalizado'),
   )
 
-  const focusMobileProperties = () => {
-    if (!isDesktop) setMobileTab('properties')
-  }
-
   return (
     <div className="flex h-[calc(100dvh-53px)] min-h-0 flex-col overflow-hidden bg-[#eef0f4] max-lg:h-[100dvh] max-lg:max-h-[100dvh] lg:flex-row">
       <EditorPanel
@@ -723,21 +715,10 @@ export function DesignStudio() {
             {shapes.length} elemento{shapes.length === 1 ? '' : 's'}
           </div>
 
-          <div
-            className="grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-[#e8ebf0] lg:flex lg:flex-row"
-            style={
-              !isDesktop
-                ? ({
-                    '--mobile-dock-panel-max': mobileTab
-                      ? MOBILE_DOCK_PANEL_MAX
-                      : '0px',
-                  } as React.CSSProperties)
-                : undefined
-            }
-          >
+          <div className="grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,38dvh)_minmax(0,1fr)] overflow-hidden bg-[#e8ebf0] lg:flex lg:flex-row lg:grid-rows-none">
             <div
               ref={mockupFitRef}
-              className="relative flex min-h-[48dvh] min-w-0 items-center justify-center overflow-hidden px-3 py-3 lg:min-h-0 lg:flex-1 lg:p-4"
+              className="relative flex min-h-0 min-w-0 touch-none items-center justify-center overflow-hidden px-3 py-2 lg:min-h-0 lg:flex-1 lg:p-4"
             >
               {limitWarning ? (
                 <div className="pointer-events-none absolute top-3 left-1/2 z-30 -translate-x-1/2 rounded-full bg-yellow-50 px-4 py-2 text-sm font-semibold text-yellow-800 shadow">
@@ -745,7 +726,7 @@ export function DesignStudio() {
                 </div>
               ) : null}
 
-              <div className="absolute top-2 left-1/2 z-30 -translate-x-1/2 max-lg:top-auto max-lg:bottom-[calc(68px+var(--mobile-dock-panel-max,0px))] lg:left-4 lg:translate-x-0">
+              <div className="absolute top-2 left-1/2 z-30 -translate-x-1/2 lg:left-4 lg:translate-x-0">
                 <MockupViewToggle
                   printZone={printZone}
                   productColor={productColor}
@@ -854,7 +835,6 @@ export function DesignStudio() {
                         setActivePanel(
                           shape.type === 'image' ? 'designs' : 'text',
                         )
-                        focusMobileProperties()
                       }}
                       onDragStart={(e) => {
                         dragState.current = {

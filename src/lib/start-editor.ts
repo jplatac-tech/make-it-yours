@@ -30,3 +30,4 @@ export function saveEditorSession(options: {
 }
 
 export const EDITOR_PATH = '/disenar/editor'
+export const PROBAR_DISENO_PATH = '/probar-diseno'

@@ -52,6 +52,9 @@ type Props = {
   /** En móvil dentro del dock: el encabezado lo muestra el dock */
   hideHeader?: boolean
 
+  /** Contenido suelto; el scroll lo maneja el dock móvil */
+  embedded?: boolean
+
   activePanel: EditorPanelId
 
   setActivePanel: (id: EditorPanelId) => void
@@ -110,6 +113,8 @@ export function EditorPanel(props: Props) {
 
     hideHeader = false,
 
+    embedded = false,
+
     activePanel,
 
     setActivePanel,
@@ -156,16 +161,20 @@ export function EditorPanel(props: Props) {
 
 
 
+  const mobileShell = mode === 'mobile' && (hideHeader || embedded)
+
   const panelBody = (
       <div
         className={
-          mode === 'mobile'
-            ? 'flex w-full flex-col bg-[#f8f9fb]'
-            : 'flex w-[340px] shrink-0 flex-col border-r border-neutral-200 bg-[#f8f9fb] shadow-md'
+          mobileShell
+            ? 'w-full'
+            : mode === 'mobile'
+              ? 'flex w-full flex-col bg-[#f8f9fb]'
+              : 'flex w-[340px] shrink-0 flex-col border-r border-neutral-200 bg-[#f8f9fb] shadow-md'
         }
       >
 
-        {mode === 'mobile' && hideHeader ? null : (
+        {mobileShell ? null : (
           <div className="shrink-0 border-b border-neutral-200 bg-white px-5 py-3">
             <h2 className="text-base font-bold text-neutral-900">
               {PANEL_TITLES[activePanel]}
@@ -175,8 +184,8 @@ export function EditorPanel(props: Props) {
 
         <div
           className={
-            mode === 'mobile' && hideHeader
-              ? 'min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3'
+            mobileShell
+              ? 'px-4 py-3 pb-8'
               : 'min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 lg:px-5 lg:py-5'
           }
         >

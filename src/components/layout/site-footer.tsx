@@ -1,7 +1,15 @@
+'use client'
+
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { buildWhatsAppUrl, formatQuickQuoteMessage } from '../../lib/whatsapp'
 
 export function SiteFooter() {
+  const pathname = usePathname()
+  if (pathname === '/disenar' || pathname.startsWith('/disenar/')) {
+    return null
+  }
+
   const whatsappHref = buildWhatsAppUrl(formatQuickQuoteMessage())
 
   return (
@@ -9,8 +17,8 @@ export function SiteFooter() {
       <div className="container flex flex-wrap items-center justify-between gap-6 text-sm text-neutral-500">
         <p>Make It Yours — diseña, estampa y cotiza por WhatsApp.</p>
         <div className="flex flex-wrap gap-4 font-semibold text-neutral-700">
-          <Link href="/catalogo">Catálogo</Link>
-          <Link href="/disenar">Editor</Link>
+          <Link href="/probar-diseno">Probar diseño</Link>
+          <Link href="/disenar/editor">Editor</Link>
           <Link href="/carrito">Carrito</Link>
           <a
             href={whatsappHref}

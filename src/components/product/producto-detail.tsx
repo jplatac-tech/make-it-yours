@@ -118,7 +118,7 @@ export function ProductoDetail({ product }: { product: Product }) {
             Añadir al carrito
           </Button>
           <Link
-            href="/disenar"
+            href="/disenar/editor"
             className="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-semibold text-neutral-900 hover:bg-neutral-50"
           >
             Diseñar esta prenda

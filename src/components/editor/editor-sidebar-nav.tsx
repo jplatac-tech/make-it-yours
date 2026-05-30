@@ -79,11 +79,10 @@ const ITEMS: {
 
 type Props = {
   activePanel: EditorPanelId
-  onSelect?: (id: EditorPanelId) => void
+  onSelect: (id: EditorPanelId) => void
   layout?: 'vertical' | 'horizontal' | 'dock'
-  /** Solo layout dock: pestaña abierta (null = todas cerradas) */
+  /** Solo layout dock: pestaña activa del panel inferior */
   openTab?: DockOpenTab
-  onToggle?: (id: EditorPanelId) => void
 }
 
 export function EditorSidebarNav({
@@ -91,38 +90,31 @@ export function EditorSidebarNav({
   onSelect,
   layout = 'vertical',
   openTab = null,
-  onToggle,
 }: Props) {
   if (layout === 'dock') {
-    const handle = onToggle ?? onSelect
-    if (!handle) return null
-
     return (
       <nav
         className="flex min-w-0 flex-1 items-center justify-around gap-0.5"
         aria-label="Herramientas del editor"
       >
         {ITEMS.map((item) => {
-          const isOpen = openTab === item.id
-          const active = isOpen || activePanel === item.id
+          const active = openTab === item.id
           return (
             <button
               key={item.id}
               type="button"
               title={item.label}
-              aria-expanded={isOpen}
-              onClick={() => handle(item.id)}
+              aria-current={active ? 'page' : undefined}
+              onClick={() => onSelect(item.id)}
               className={
-                'flex h-[52px] min-w-[52px] flex-1 max-w-[72px] cursor-pointer flex-col items-center justify-center rounded-xl px-1 transition ' +
-                (isOpen
+                'flex h-[48px] min-w-[48px] flex-1 max-w-[72px] cursor-pointer flex-col items-center justify-center rounded-xl px-1 transition ' +
+                (active
                   ? 'bg-violet-600 text-white shadow-sm'
-                  : active
-                    ? 'bg-white/10 text-violet-200'
-                    : 'text-neutral-400 hover:bg-white/10 hover:text-neutral-200')
+                  : 'text-neutral-400 hover:bg-white/10 hover:text-neutral-200')
               }
             >
               <span className="flex h-7 w-7 shrink-0 items-center justify-center">
-                <item.Icon active={isOpen} />
+                <item.Icon active={active} />
               </span>
               <span className="mt-0.5 truncate text-[10px] font-bold leading-none">
                 {item.label}
@@ -147,7 +139,7 @@ export function EditorSidebarNav({
               key={item.id}
               type="button"
               title={item.label}
-              onClick={() => onSelect?.(item.id)}
+              onClick={() => onSelect(item.id)}
               className={
                 'flex shrink-0 flex-col items-center rounded-lg px-2.5 py-1.5 transition ' +
                 (active
@@ -178,7 +170,7 @@ export function EditorSidebarNav({
             key={item.id}
             type="button"
             title={item.label}
-            onClick={() => onSelect?.(item.id)}
+            onClick={() => onSelect(item.id)}
             className={
               'group mb-0.5 flex w-full flex-col items-center rounded-md px-1 py-2 transition-colors ' +
               (active

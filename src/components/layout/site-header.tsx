@@ -4,11 +4,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAppState } from '../app-state/app-state-provider'
 import { buildWhatsAppUrl, formatQuickQuoteMessage } from '../../lib/whatsapp'
+import { EDITOR_PATH } from '../../lib/start-editor'
 
-const nav = [
-  { href: '/catalogo', label: 'Catálogo' },
-  { href: '/disenar', label: 'Diseñar' },
-] as const
+const nav = [{ href: EDITOR_PATH, label: 'Diseñar' }] as const
 
 export function SiteHeader() {
   const { totalItems } = useAppState()
@@ -69,14 +67,44 @@ export function SiteHeader() {
           </a>
           <Link
             href="/carrito"
+            aria-label={
+              totalItems > 0
+                ? `Carrito, ${totalItems} artículo${totalItems === 1 ? '' : 's'}`
+                : 'Carrito vacío'
+            }
             className={
-              'rounded-full px-4 py-2 text-xs font-semibold transition ' +
+              'relative inline-flex h-10 w-10 items-center justify-center rounded-full transition ' +
               (isEditor
                 ? 'border border-white/20 text-white hover:bg-white/10'
                 : 'border border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100')
             }
           >
-            Carrito ({totalItems})
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
+            {totalItems > 0 ? (
+              <span
+                className={
+                  'absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold ' +
+                  (isEditor
+                    ? 'bg-violet-500 text-white'
+                    : 'bg-violet-600 text-white')
+                }
+              >
+                {totalItems > 99 ? '99+' : totalItems}
+              </span>
+            ) : null}
           </Link>
         </div>
       </div>

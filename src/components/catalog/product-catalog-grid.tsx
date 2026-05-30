@@ -74,7 +74,7 @@ export function ProductCatalogGrid({
                   Ver
                 </Link>
                 <Link
-                  href="/disenar"
+                  href="/disenar/editor"
                   className="rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-semibold text-violet-800 transition hover:bg-violet-100"
                 >
                   Diseñar

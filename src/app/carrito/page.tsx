@@ -43,7 +43,7 @@ export default function CartPage() {
         <div className="card mt-10 max-w-lg p-8 text-center">
           <p className="text-neutral-500">Tu carrito está vacío.</p>
           <Link
-            href="/catalogo"
+            href="/#catalogo"
             className="btn btn-primary mt-6 inline-flex bg-violet-600"
           >
             Ver catálogo
@@ -107,7 +107,7 @@ export default function CartPage() {
               Enviar carrito por WhatsApp
             </a>
             <Link
-              href="/disenar"
+              href="/disenar/editor"
               className="mt-3 block text-center text-sm font-semibold text-violet-700 hover:underline"
             >
               Crear diseño en el editor

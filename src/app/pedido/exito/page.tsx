@@ -15,7 +15,7 @@ export default function PedidoExitoPage() {
         </p>
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link href="/disenar" className="btn btn-primary">
+          <Link href="/disenar/editor" className="btn btn-primary">
             Crear otro diseño
           </Link>
           <Link href="/" className="btn btn-secondary">
