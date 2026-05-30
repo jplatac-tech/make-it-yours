@@ -1,0 +1,13 @@
+export type QuoteStatus =
+  | 'PENDIENTE'
+  | 'EN_REVISION'
+  | 'COTIZADO'
+  | 'APROBADO'
+  | 'RECHAZADO'
+  | 'NEW'
+  | 'REVIEWING'
+  | 'AWAITING_CORRECTION'
+  | 'READY_FOR_PRINT'
+  | 'IN_PRODUCTION'
+  | 'COMPLETED'
+  | 'CANCELLED'

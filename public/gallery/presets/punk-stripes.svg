@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <rect width="400" height="400" fill="#111"/>
+  <g fill="#e11d48">
+    <rect y="0" width="400" height="40"/>
+    <rect y="80" width="400" height="40"/>
+    <rect y="160" width="400" height="40"/>
+    <rect y="240" width="400" height="40"/>
+    <rect y="320" width="400" height="40"/>
+  </g>
+  <text x="200" y="210" text-anchor="middle" font-family="Impact, sans-serif" font-size="72" fill="#fff">PUNK</text>
+</svg>

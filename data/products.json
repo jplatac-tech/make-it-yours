@@ -1,0 +1,23 @@
+[
+  {
+    "slug": "camiseta-unisex",
+    "name": "Camiseta unisex",
+    "description": "Prenda ligera para personalización básica con estampado DTF.",
+    "price": 29,
+    "type": "TSHIRT"
+  },
+  {
+    "slug": "hoodie-unisex",
+    "name": "Hoodie unisex",
+    "description": "Hoodie clásico para diseños en pecho y espalda.",
+    "price": 49,
+    "type": "HOODIE"
+  },
+  {
+    "slug": "crewneck-unisex",
+    "name": "Crewneck unisex",
+    "description": "Suéter tipo crewneck para estilo casual y streetwear.",
+    "price": 55,
+    "type": "CREWNECK"
+  }
+]

@@ -1,0 +1,241 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+enum ProductType {
+  TSHIRT
+  HOODIE
+  CREWNECK
+}
+
+enum ProductColor {
+  BLACK
+  WHITE
+  BEIGE
+  HEATHER_GRAY
+}
+
+enum ProductSize {
+  S
+  M
+  L
+  XL
+}
+
+enum PrintZoneType {
+  LEFT_CHEST
+  FRONT
+  BACK
+}
+
+enum QuoteStatus {
+  PENDING
+  IN_REVIEW
+  QUOTED
+  APPROVED
+  REJECTED
+  NEW
+  REVIEWING
+  AWAITING_CORRECTION
+  READY_FOR_PRINT
+  IN_PRODUCTION
+  COMPLETED
+  CANCELLED
+}
+
+enum AssetKind {
+  UPLOADED_SOURCE
+  TECHNICAL_FILE
+  MOCKUP_PREVIEW
+}
+
+enum DesignElementType {
+  TEXT
+  ICON
+  IMAGE
+}
+
+model Product {
+  id          String           @id @default(cuid())
+  slug        String           @unique
+  name        String
+  description String?
+  type        ProductType
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  variants    ProductVariant[]
+  printZones  ProductPrintZone[]
+
+  @@index([type])
+  @@index([isActive])
+}
+
+model ProductVariant {
+  id         String       @id @default(cuid())
+  productId  String
+  color      ProductColor
+  size       ProductSize
+  sku        String?      @unique
+  priceFrom  Decimal?     @db.Decimal(10, 2)
+  stock      Int?
+  isActive   Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  product    Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quoteItems QuoteItem[]
+
+  @@unique([productId, color, size])
+  @@index([productId])
+  @@index([color])
+  @@index([size])
+}
+
+model ProductPrintZone {
+  id          String         @id @default(cuid())
+  productId   String
+  zone        PrintZoneType
+  label       String
+  maxWidthIn  Decimal        @db.Decimal(5, 2)
+  maxHeightIn Decimal        @db.Decimal(5, 2)
+  dpi         Int            @default(300)
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  product     Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quoteItems  QuoteItem[]
+
+  @@unique([productId, zone])
+  @@index([productId])
+}
+
+model QuoteRequest {
+  id                String         @id @default(cuid())
+  requestNumber     String         @unique
+  status            QuoteStatus    @default(PENDING)
+
+  customerName      String
+  customerEmail     String?
+  customerWhatsapp  String?
+  quantityDesired   Int
+  neededBy          DateTime?
+  comments          String?
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  items             QuoteItem[]
+  assets            DesignAsset[]
+  statusHistory     QuoteStatusLog[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([customerEmail])
+  @@index([customerWhatsapp])
+}
+
+model QuoteItem {
+  id                String            @id @default(cuid())
+  quoteRequestId    String
+  productVariantId  String
+  printZoneId       String
+
+  finalWidthIn      Decimal           @db.Decimal(5, 2)
+  finalHeightIn     Decimal           @db.Decimal(5, 2)
+
+  designJson        Json
+  notes             String?
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  quoteRequest      QuoteRequest      @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+  productVariant    ProductVariant    @relation(fields: [productVariantId], references: [id])
+  printZone         ProductPrintZone  @relation(fields: [printZoneId], references: [id])
+  designElements    DesignElement[]
+  assets            DesignAsset[]
+
+  @@index([quoteRequestId])
+  @@index([productVariantId])
+  @@index([printZoneId])
+}
+
+model DesignElement {
+  id              String             @id @default(cuid())
+  quoteItemId     String
+  type            DesignElementType
+
+  x               Decimal            @db.Decimal(8, 2)
+  y               Decimal            @db.Decimal(8, 2)
+  width           Decimal?           @db.Decimal(8, 2)
+  height          Decimal?           @db.Decimal(8, 2)
+  rotation        Decimal?           @db.Decimal(6, 2)
+
+  textValue       String?
+  fontFamily      String?
+  fontSize        Decimal?           @db.Decimal(8, 2)
+  colorHex        String?
+
+  iconKey         String?
+
+  sourceUrl       String?
+  originalName    String?
+  mimeType        String?
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  quoteItem       QuoteItem          @relation(fields: [quoteItemId], references: [id], onDelete: Cascade)
+
+  @@index([quoteItemId])
+  @@index([type])
+}
+
+model DesignAsset {
+  id              String        @id @default(cuid())
+  quoteRequestId  String?
+  quoteItemId     String?
+  kind            AssetKind
+
+  provider        String?
+  publicId        String?
+  url             String
+  secureUrl       String?
+  originalName    String?
+  mimeType        String?
+  sizeBytes       Int?
+
+  widthPx         Int?
+  heightPx        Int?
+  dpi             Int?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  quoteRequest    QuoteRequest? @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+  quoteItem       QuoteItem?    @relation(fields: [quoteItemId], references: [id], onDelete: Cascade)
+
+  @@index([quoteRequestId])
+  @@index([quoteItemId])
+  @@index([kind])
+}
+
+model QuoteStatusLog {
+  id              String       @id @default(cuid())
+  quoteRequestId  String
+  fromStatus      QuoteStatus?
+  toStatus        QuoteStatus
+  note            String?
+  changedAt       DateTime     @default(now())
+
+  quoteRequest    QuoteRequest @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+
+  @@index([quoteRequestId])
+  @@index([changedAt])
+}
