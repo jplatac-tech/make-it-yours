@@ -55,12 +55,28 @@ export function fitImageSize(
   }
 }
 
-/** Tamaño inicial al insertar: tan grande como quepa en el lienzo (puede agrandar) */
+/** Tamaño inicial al insertar en el área de estampado (no ocupa todo el mockup) */
+export function fitImageInitialInPrintArea(
+  width: number,
+  height: number,
+  printArea: { width: number; height: number },
+  maxFraction = 0.55,
+): { width: number; height: number } {
+  const maxSide = Math.min(printArea.width, printArea.height) * maxFraction
+  return fitImageSize(width, height, maxSide)
+}
+
+/** @deprecated Usar fitImageInitialInPrintArea */
 export function fitImageInitialOnCanvas(
   width: number,
   height: number,
   canvasW: number,
   canvasH: number,
 ): { width: number; height: number } {
-  return fitImageSize(width, height, Math.max(canvasW, canvasH) * 0.95)
+  return fitImageInitialInPrintArea(
+    width,
+    height,
+    { width: canvasW * 0.35, height: canvasH * 0.28 },
+    0.95,
+  )
 }

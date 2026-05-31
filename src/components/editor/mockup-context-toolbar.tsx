@@ -8,6 +8,8 @@ type Props = {
   onRemove: () => void
   cropMode: boolean
   onToggleCrop: () => void
+  onRemoveBackground?: () => void
+  removingBackground?: boolean
   layout?: 'horizontal' | 'vertical'
 }
 
@@ -56,6 +58,8 @@ export function MockupContextToolbar({
   onRemove,
   cropMode,
   onToggleCrop,
+  onRemoveBackground,
+  removingBackground = false,
   layout = 'horizontal',
 }: Props) {
   const isText = shape.type === 'text' || shape.type === 'icon'
@@ -134,7 +138,18 @@ export function MockupContextToolbar({
       ) : null}
 
       {isImage ? (
-        <div className={vertical ? 'mt-2 w-full' : ''}>
+        <div className={vertical ? 'mt-2 w-full space-y-2' : 'space-y-2'}>
+          {onRemoveBackground ? (
+            <ToolbarBtn
+              title="Quitar fondo de la imagen"
+              fullWidth={vertical}
+              disabled={removingBackground}
+              onClick={onRemoveBackground}
+              className="text-sm font-semibold"
+            >
+              {removingBackground ? 'Procesando…' : 'Quitar fondo'}
+            </ToolbarBtn>
+          ) : null}
           <ToolbarBtn
             title={cropMode ? 'Terminar recorte' : 'Recortar en mockup'}
             active={cropMode}

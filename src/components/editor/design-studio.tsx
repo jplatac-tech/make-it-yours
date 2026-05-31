@@ -27,14 +27,11 @@ import { getDefaultFontFamily } from '../../lib/editor-fonts'
 import { type TextPreset } from '../../lib/text-presets'
 import type { DesignShape } from '../../types/design'
 import {
-  buildWhatsAppUrl,
-  formatDesignQuoteMessage,
-} from '../../lib/whatsapp'
-import {
   resolveImageSrc,
   loadImageDimensions,
-  fitImageInitialOnCanvas,
+  fitImageInitialInPrintArea,
 } from '../../lib/resolve-image-src'
+import { isCatalogRasterSrc } from '../../lib/catalog-image-src'
 import {
   addUploadedFile,
   compressImageToDataUrl,
@@ -45,6 +42,11 @@ import {
   type GuideLines,
 } from '../../lib/alignment-guides'
 import { clampScaleForShape } from '../../lib/size-limits'
+import {
+  preloadBackgroundRemoval,
+  resolveAndPrepareDesignImage,
+  removeImageBackground,
+} from '../../lib/remove-background'
 
 import { EDITOR_CANVAS_H, EDITOR_CANVAS_W } from '../../lib/editor-canvas'
 
@@ -94,7 +96,7 @@ export function DesignStudio() {
   const [productColor, setProductColor] = useState<ProductColorValue>('WHITE')
   const [printZone, setPrintZone] = useState<PrintZoneValue>('FRONT')
   const [activePanel, setActivePanel] = useState<EditorPanelId>('designs')
-  const [mobileTab, setMobileTab] = useState<MobileDockTab>('designs')
+  const [mobileTab, setMobileTab] = useState<MobileDockTab>(null)
   const isDesktop = useEditorDesktopLayout()
   const mockupFitRef = useRef<HTMLDivElement | null>(null)
   const [mockupFitScale, setMockupFitScale] = useState(1)
@@ -103,6 +105,7 @@ export function DesignStudio() {
   const [isDragging, setIsDragging] = useState(false)
   const [limitWarning, setLimitWarning] = useState<string | null>(null)
   const [cropModeId, setCropModeId] = useState<string | null>(null)
+  const [imageProcessing, setImageProcessing] = useState<string | null>(null)
   const limitTimerRef = useRef<number | null>(null)
   const mockupBackgroundColor = '#d8dde3'
   const [guideLines, setGuideLines] = useState<GuideLines>({
@@ -158,24 +161,37 @@ export function DesignStudio() {
 
   const shapes = shapesByZone[printZone]
 
+  useEffect(() => {
+    setSelectedId((id) => {
+      if (!id) return null
+      return shapesByZone[printZone].some((s) => s.id === id) ? id : null
+    })
+    setEditingTextId((id) => {
+      if (!id) return null
+      return shapesByZone[printZone].some((s) => s.id === id) ? id : null
+    })
+    setCropModeId((id) => {
+      if (!id) return null
+      return shapesByZone[printZone].some((s) => s.id === id) ? id : null
+    })
+  }, [printZone, shapesByZone])
+
   const setShapes = useCallback(
     (updater: DesignShape[] | ((prev: DesignShape[]) => DesignShape[])) => {
       setShapesByZone((prev) => {
-        const current = prev[printZone]
+        const zone = printZoneRef.current
+        const current = prev[zone]
         const next = typeof updater === 'function' ? updater(current) : updater
-        return { ...prev, [printZone]: next }
+        return { ...prev, [zone]: next }
       })
     },
-    [printZone],
+    [],
   )
 
   const selectedShape = useMemo(
     () => shapes.find((s) => s.id === selectedId) ?? null,
     [selectedId, shapes],
   )
-
-  const canContinue =
-    shapesByZone.FRONT.length > 0 || shapesByZone.BACK.length > 0
 
   const persist = useCallback(
     (
@@ -245,6 +261,10 @@ export function DesignStudio() {
     if (!editorReady) return
     persist(shapesByZone, printZone, productColor)
   }, [shapesByZone, printZone, productColor, persist, editorReady])
+
+  useEffect(() => {
+    preloadBackgroundRemoval()
+  }, [])
 
   useEffect(() => {
     if (isDesktop) {
@@ -341,7 +361,8 @@ export function DesignStudio() {
         setIsDragging(false)
         setGuideLines({ vertical: [], horizontal: [] })
         const { id, startX, originScale } = resizeState.current
-        const delta = (e.clientX - startX) / 120
+        const zoom = canvasZoomRef.current || 1
+        const delta = (e.clientX - startX) / zoom / 100
         const shape = shapesRef.current[printZoneRef.current].find(
           (sh) => sh.id === id,
         )
@@ -551,30 +572,50 @@ export function DesignStudio() {
       })
       setSelectedId(id)
       setActivePanel('designs')
+      if (!isDesktop) setMobileTab(null)
     },
-    [],
+    [isDesktop],
   )
 
   const addImageFromSrc = useCallback(
     async (src: string) => {
+      const needsRuntimeBg =
+        !isCatalogRasterSrc(src) && !src.split('?')[0].endsWith('.svg')
+      if (needsRuntimeBg) setImageProcessing('Quitando fondo…')
       try {
-        const resolved = await resolveImageSrc(src)
-        const dims = await loadImageDimensions(resolved)
-        const { width, height } = fitImageInitialOnCanvas(
+        const area =
+          getPrintZone(printZoneRef.current)?.printArea ??
+          getPrintZone('FRONT')!.printArea
+        const prepared = await resolveAndPrepareDesignImage(src)
+        const dims = await loadImageDimensions(prepared)
+        const { width, height } = fitImageInitialInPrintArea(
           dims.width,
           dims.height,
-          CANVAS_W,
-          CANVAS_H,
+          area,
+          0.55,
         )
-        placeImageOnCanvas(resolved, width, height)
+        placeImageOnCanvas(prepared, width, height)
       } catch {
-        const { width, height } = fitImageInitialOnCanvas(
-          200,
-          200,
-          CANVAS_W,
-          CANVAS_H,
-        )
-        placeImageOnCanvas(src, width, height)
+        try {
+          const resolved = await resolveImageSrc(src)
+          const area =
+            getPrintZone(printZoneRef.current)?.printArea ??
+            getPrintZone('FRONT')!.printArea
+          const dims = await loadImageDimensions(resolved)
+          const { width, height } = fitImageInitialInPrintArea(
+            dims.width,
+            dims.height,
+            area,
+            0.55,
+          )
+          placeImageOnCanvas(resolved, width, height)
+        } catch {
+          const area = getPrintZone('FRONT')!.printArea
+          const { width, height } = fitImageInitialInPrintArea(120, 120, area, 0.55)
+          placeImageOnCanvas(src, width, height)
+        }
+      } finally {
+        setImageProcessing(null)
       }
     },
     [placeImageOnCanvas],
@@ -585,14 +626,19 @@ export function DesignStudio() {
       const dataUrl = await compressImageToDataUrl(file)
       await addUploadedFile(file.name, dataUrl)
       setUploadsRefresh((k) => k + 1)
-      const dims = await loadImageDimensions(dataUrl)
-      const { width, height } = fitImageInitialOnCanvas(
+      setImageProcessing('Quitando fondo…')
+      const prepared = await removeImageBackground(dataUrl)
+      const area =
+        getPrintZone(printZoneRef.current)?.printArea ??
+        getPrintZone('FRONT')!.printArea
+      const dims = await loadImageDimensions(prepared)
+      const { width, height } = fitImageInitialInPrintArea(
         dims.width,
         dims.height,
-        CANVAS_W,
-        CANVAS_H,
+        area,
+        0.55,
       )
-      placeImageOnCanvas(dataUrl, width, height)
+      placeImageOnCanvas(prepared, width, height)
     } catch {
       const reader = new FileReader()
       reader.onload = () => {
@@ -601,6 +647,19 @@ export function DesignStudio() {
         }
       }
       reader.readAsDataURL(file)
+    } finally {
+      setImageProcessing(null)
+    }
+  }
+
+  const removeBackgroundFromSelected = async () => {
+    if (!selectedShape?.src || selectedShape.type !== 'image') return
+    setImageProcessing('Quitando fondo…')
+    try {
+      const prepared = await removeImageBackground(selectedShape.src)
+      updateShape(selectedShape.id, { src: prepared })
+    } finally {
+      setImageProcessing(null)
     }
   }
 
@@ -652,6 +711,7 @@ export function DesignStudio() {
   }
 
   const startRotate = (shape: DesignShape, e: React.PointerEvent) => {
+    e.currentTarget.setPointerCapture(e.pointerId)
     const bounds = getShapeBounds(shape)
     const rect = canvasRef.current?.getBoundingClientRect()
     const zoom = canvasZoomRef.current || 1
@@ -669,21 +729,6 @@ export function DesignStudio() {
       cy,
     }
   }
-
-  const designJson = useMemo(
-    () =>
-      JSON.stringify({
-        canvas: { width: CANVAS_W, height: CANVAS_H },
-        shapesByZone,
-        productColor,
-        printZone,
-      }),
-    [shapesByZone, productColor, printZone],
-  )
-
-  const whatsappDesignHref = buildWhatsAppUrl(
-    formatDesignQuoteMessage(designJson, 'Suéter / crewneck personalizado'),
-  )
 
   return (
     <div className="flex h-[calc(100dvh-53px)] min-h-0 flex-col overflow-hidden bg-[#eef0f4] max-lg:h-[100dvh] max-lg:max-h-[100dvh] lg:flex-row">
@@ -704,8 +749,6 @@ export function DesignStudio() {
         onUploadSelect={(src) => void addImageFromSrc(src)}
         onUserUpload={handleUserUpload}
         uploadsRefresh={uploadsRefresh}
-        canContinue={canContinue}
-        whatsappDesignHref={whatsappDesignHref}
       />
 
       <section className="relative z-10 flex min-h-0 min-w-0 flex-1 overflow-hidden">
@@ -715,10 +758,10 @@ export function DesignStudio() {
             {shapes.length} elemento{shapes.length === 1 ? '' : 's'}
           </div>
 
-          <div className="grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,38dvh)_minmax(0,1fr)] overflow-hidden bg-[#e8ebf0] lg:flex lg:flex-row lg:grid-rows-none">
+          <div className="grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-[#e8ebf0] lg:flex lg:flex-row lg:grid-rows-none">
             <div
               ref={mockupFitRef}
-              className="relative flex min-h-0 min-w-0 touch-none items-center justify-center overflow-hidden px-3 py-2 lg:min-h-0 lg:flex-1 lg:p-4"
+              className="relative flex min-h-0 min-w-0 items-center justify-center overflow-hidden px-3 py-2 lg:min-h-0 lg:flex-1 lg:p-4"
             >
               {limitWarning ? (
                 <div className="pointer-events-none absolute top-3 left-1/2 z-30 -translate-x-1/2 rounded-full bg-yellow-50 px-4 py-2 text-sm font-semibold text-yellow-800 shadow">
@@ -726,14 +769,18 @@ export function DesignStudio() {
                 </div>
               ) : null}
 
-              <div className="absolute top-2 left-1/2 z-30 -translate-x-1/2 lg:left-4 lg:translate-x-0">
-                <MockupViewToggle
-                  printZone={printZone}
-                  productColor={productColor}
-                  onChange={setPrintZone}
-                  fixedSize={!isDesktop}
-                />
-              </div>
+              {imageProcessing ? (
+                <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-black/25">
+                  <div className="rounded-2xl bg-white px-6 py-4 text-center shadow-lg">
+                    <p className="text-sm font-semibold text-neutral-900">
+                      {imageProcessing}
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-500">
+                      Primera vez puede tardar unos segundos
+                    </p>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="absolute bottom-2 left-2 z-20 hidden lg:block">
                 <MockupZoomControls
@@ -743,27 +790,26 @@ export function DesignStudio() {
               </div>
 
               <div
-                className="relative shrink-0 overflow-hidden rounded-xl shadow-xl"
+                className="relative shrink-0 overflow-visible rounded-xl shadow-xl"
                 style={
                   isDesktop
                     ? {
                         width: CANVAS_W,
                         height: CANVAS_H,
-                        backgroundColor: mockupBackgroundColor,
                       }
                     : {
                         width: CANVAS_W * stageScale,
                         height: CANVAS_H * stageScale,
-                        backgroundColor: mockupBackgroundColor,
                       }
                 }
               >
                 <div
                   ref={canvasRef}
                   className={
-                    isDesktop
-                      ? 'absolute left-1/2 top-1/2 origin-center'
-                      : 'absolute left-0 top-0 origin-top-left'
+                    'absolute overflow-visible rounded-xl ' +
+                    (isDesktop
+                      ? 'left-1/2 top-1/2 origin-center'
+                      : 'left-0 top-0 origin-top-left')
                   }
                   style={
                     isDesktop
@@ -773,14 +819,17 @@ export function DesignStudio() {
                           marginLeft: -CANVAS_W / 2,
                           marginTop: -CANVAS_H / 2,
                           transform: `scale(${canvasZoom})`,
+                          backgroundColor: mockupBackgroundColor,
                         }
                       : {
                           width: CANVAS_W,
                           height: CANVAS_H,
                           transform: `scale(${stageScale})`,
+                          backgroundColor: mockupBackgroundColor,
                         }
                   }
-                  onPointerDown={() => {
+                  onPointerDown={(e) => {
+                    if (e.target !== e.currentTarget) return
                     if (!editingTextId) {
                       setSelectedId(null)
                       setCropModeId(null)
@@ -837,6 +886,7 @@ export function DesignStudio() {
                         )
                       }}
                       onDragStart={(e) => {
+                        e.currentTarget.setPointerCapture(e.pointerId)
                         dragState.current = {
                           id: shape.id,
                           startX: e.clientX,
@@ -848,6 +898,7 @@ export function DesignStudio() {
                         }
                       }}
                       onResizeStart={(e) => {
+                        e.currentTarget.setPointerCapture(e.pointerId)
                         resizeState.current = {
                           id: shape.id,
                           startX: e.clientX,
@@ -874,6 +925,28 @@ export function DesignStudio() {
                   )
                 })}
                 </div>
+
+                <div
+                  className={
+                    'pointer-events-none absolute z-20 ' +
+                    (isDesktop
+                      ? 'top-2 left-2'
+                      : 'bottom-3 right-3 top-auto left-auto')
+                  }
+                >
+                  <div
+                    className="pointer-events-auto"
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    <MockupViewToggle
+                      printZone={printZone}
+                      productColor={productColor}
+                      onChange={setPrintZone}
+                      variant="compact"
+                      size={isDesktop ? 'default' : 'large'}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -892,6 +965,12 @@ export function DesignStudio() {
                   id === selectedShape.id ? null : selectedShape.id,
                 )
               }}
+              onRemoveBackground={
+                selectedShape?.type === 'image'
+                  ? () => void removeBackgroundFromSelected()
+                  : undefined
+              }
+              removingBackground={imageProcessing !== null}
             />
           </div>
 
@@ -915,8 +994,6 @@ export function DesignStudio() {
             onUploadSelect={(src) => void addImageFromSrc(src)}
             onUserUpload={handleUserUpload}
             uploadsRefresh={uploadsRefresh}
-            canContinue={canContinue}
-            whatsappDesignHref={whatsappDesignHref}
             printZone={printZone}
             canvasW={CANVAS_W}
             canvasH={CANVAS_H}
@@ -930,6 +1007,12 @@ export function DesignStudio() {
                 id === selectedShape.id ? null : selectedShape.id,
               )
             }}
+            onRemoveBackground={
+              selectedShape?.type === 'image'
+                ? () => void removeBackgroundFromSelected()
+                : undefined
+            }
+            removingBackground={imageProcessing !== null}
           />
         </div>
       </section>

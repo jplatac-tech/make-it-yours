@@ -7,9 +7,36 @@ import { PRODUCT_COLORS, type ProductColorValue } from '../../lib/products'
 type Props = {
   value: ProductColorValue
   onChange: (v: ProductColorValue) => void
+  /** Fila horizontal para panel móvil que emerge hacia arriba */
+  compact?: boolean
 }
 
-export function GarmentColorPicker({ value, onChange }: Props) {
+export function GarmentColorPicker({ value, onChange, compact = false }: Props) {
+  if (compact) {
+    return (
+      <div
+        className="flex touch-pan-x gap-2.5 overflow-x-auto overscroll-x-contain px-3 py-2.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+        aria-label="Color de la prenda"
+      >
+        {PRODUCT_COLORS.map((c) => (
+          <button
+            key={c.value}
+            type="button"
+            title={c.label}
+            onClick={() => onChange(c.value)}
+            className={
+              'h-12 w-12 shrink-0 cursor-pointer rounded-full border-2 shadow-sm transition active:scale-95 ' +
+              (value === c.value
+                ? 'border-violet-600 ring-2 ring-violet-300'
+                : 'border-neutral-300 hover:border-violet-400')
+            }
+            style={{ backgroundColor: c.hex }}
+          />
+        ))}
+      </div>
+    )
+  }
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const current = PRODUCT_COLORS.find((c) => c.value === value) ?? PRODUCT_COLORS[0]

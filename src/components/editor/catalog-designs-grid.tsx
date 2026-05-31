@@ -1,9 +1,90 @@
 'use client'
 
+import {
+  GALLERY_BAND_POSTERS,
+  GALLERY_PRESETS,
+  type GalleryItem,
+} from '../../lib/design-gallery'
 import { getCatalogDesignGroups } from '../../lib/catalog-designs'
 
 type Props = {
   onSelect: (src: string) => void
+}
+
+type StripProps = Props & {
+  onGallerySelect?: (src: string, title: string) => void
+}
+
+const MOBILE_THUMB =
+  'h-[64px] w-[64px] shrink-0 snap-start overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm transition active:scale-95 hover:border-violet-400'
+
+export function MobileCatalogDesignsStrip({
+  onSelect,
+  onGallerySelect,
+}: StripProps) {
+  const designs = getCatalogDesignGroups().flatMap((g) => g.designs)
+  const galleryItems: GalleryItem[] = [
+    ...GALLERY_PRESETS,
+    ...GALLERY_BAND_POSTERS,
+  ]
+
+  if (designs.length === 0 && galleryItems.length === 0) {
+    return (
+      <p className="px-3 py-3 text-center text-xs text-neutral-500">
+        No hay diseños en el catálogo.
+      </p>
+    )
+  }
+
+  return (
+    <div
+      className="flex touch-pan-x gap-2 overflow-x-auto overscroll-x-contain px-3 py-2.5 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      style={{ WebkitOverflowScrolling: 'touch' }}
+      aria-label="Catálogo de diseños"
+    >
+      {designs.map((design) => (
+        <button
+          key={design.id}
+          type="button"
+          title={design.title}
+          onClick={() => onSelect(design.src)}
+          className={`${MOBILE_THUMB} cursor-pointer`}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={design.src}
+            alt={design.title}
+            className="h-full w-full object-contain p-1"
+            loading="lazy"
+            decoding="async"
+          />
+        </button>
+      ))}
+      {galleryItems.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          title={item.title}
+          onClick={() =>
+            onGallerySelect
+              ? onGallerySelect(item.src, item.title)
+              : onSelect(item.src)
+          }
+          className={`${MOBILE_THUMB} cursor-pointer`}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={item.src}
+            alt={item.title}
+            className="h-full w-full object-contain p-1"
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+          />
+        </button>
+      ))}
+    </div>
+  )
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {

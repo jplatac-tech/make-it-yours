@@ -12,38 +12,50 @@ type Props = {
 }
 
 export function DesignGalleryPanel({ onSelectDesign }: Props) {
-  const [filter, setFilter] = useState<'preset' | 'band-poster'>('preset')
+  const hasPresets = GALLERY_PRESETS.length > 0
+  const hasPosters = GALLERY_BAND_POSTERS.length > 0
+  const [filter, setFilter] = useState<'preset' | 'band-poster'>(
+    hasPresets ? 'preset' : 'band-poster',
+  )
+
+  if (!hasPresets && !hasPosters) {
+    return null
+  }
 
   const items: GalleryItem[] =
-    filter === 'band-poster' ? GALLERY_BAND_POSTERS : GALLERY_PRESETS
+    filter === 'band-poster' || !hasPresets
+      ? GALLERY_BAND_POSTERS
+      : GALLERY_PRESETS
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-1 rounded-xl bg-neutral-100 p-1">
-        {(
-          [
-            ['preset', 'Gráficos'],
-            ['band-poster', 'Posters'],
-          ] as const
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setFilter(key)}
-            className={
-              'min-h-[40px] flex-1 cursor-pointer rounded-lg px-2 py-2 text-xs font-semibold ' +
-              (filter === key
-                ? 'bg-white text-neutral-900 shadow-sm'
-                : 'text-neutral-600 hover:bg-white/70')
-            }
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {hasPresets && hasPosters ? (
+        <div className="flex gap-1 rounded-xl bg-neutral-100 p-1">
+          {(
+            [
+              ['preset', 'Gráficos'],
+              ['band-poster', 'Posters'],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setFilter(key)}
+              className={
+                'min-h-[40px] flex-1 cursor-pointer rounded-lg px-2 py-2 text-xs font-semibold ' +
+                (filter === key
+                  ? 'bg-white text-neutral-900 shadow-sm'
+                  : 'text-neutral-600 hover:bg-white/70')
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <p className="text-xs text-neutral-500">
-        {filter === 'preset'
+        {filter === 'preset' && hasPresets
           ? 'Gráficos del proyecto (SVG).'
           : 'Posters históricos · Wikimedia Commons.'}
       </p>

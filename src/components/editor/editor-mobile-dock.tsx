@@ -1,5 +1,6 @@
 'use client'
 
+import type { Dispatch, SetStateAction } from 'react'
 import Link from 'next/link'
 import type { TextPreset } from '../../lib/text-presets'
 import type { ProductColorValue } from '../../lib/products'
@@ -8,11 +9,11 @@ import { EditorPanel, type EditorPanelId } from './editor-panel'
 import { EditorSidebarNav } from './editor-sidebar-nav'
 import { MockupEditPanel } from './mockup-edit-panel'
 
-export type MobileDockTab = EditorPanelId | 'properties'
+export type MobileDockTab = EditorPanelId | 'properties' | null
 
 type Props = {
   mobileTab: MobileDockTab
-  setMobileTab: (tab: MobileDockTab) => void
+  setMobileTab: Dispatch<SetStateAction<MobileDockTab>>
   activePanel: EditorPanelId
   setActivePanel: (id: EditorPanelId) => void
   selectedShape: DesignShape | null
@@ -27,8 +28,6 @@ type Props = {
   onUploadSelect: (src: string, name: string) => void
   onUserUpload: (file: File) => void
   uploadsRefresh: number
-  canContinue: boolean
-  whatsappDesignHref: string
   printZone: string
   canvasW: number
   canvasH: number
@@ -37,6 +36,22 @@ type Props = {
   onRemove: () => void
   cropMode: boolean
   onToggleCrop: () => void
+  onRemoveBackground?: () => void
+  removingBackground?: boolean
+}
+
+const TAB_BAR_H = 'min-h-[80px] py-2'
+
+function panelPopupClass(tab: NonNullable<MobileDockTab>) {
+  if (
+    tab === 'designs' ||
+    tab === 'text' ||
+    tab === 'elements' ||
+    tab === 'garment'
+  ) {
+    return 'max-h-[96px] overflow-hidden'
+  }
+  return 'max-h-[min(46dvh,400px)] overflow-y-auto overscroll-contain touch-pan-y'
 }
 
 export function EditorMobileDock({
@@ -47,96 +62,104 @@ export function EditorMobileDock({
   selectedShape,
   ...rest
 }: Props) {
+  const closePanel = () => setMobileTab(null)
+
   const selectTool = (id: EditorPanelId) => {
     setActivePanel(id)
-    setMobileTab(id)
+    setMobileTab((prev) => (prev === id ? null : id))
   }
 
   const selectProperties = () => {
     if (!selectedShape) return
-    setMobileTab('properties')
+    setMobileTab((prev) => (prev === 'properties' ? null : 'properties'))
   }
 
+  const panelOpen = mobileTab !== null
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col border-t border-neutral-200 bg-[#f8f9fb] lg:hidden">
-      <div className="flex h-[56px] shrink-0 items-stretch gap-1 border-b border-black/20 bg-[#12121a] px-1 py-1">
-        <EditorSidebarNav
-          layout="dock"
-          activePanel={activePanel}
-          openTab={mobileTab}
-          onSelect={selectTool}
-        />
+    <div className="relative z-30 shrink-0 lg:hidden">
+      {panelOpen ? (
         <button
           type="button"
-          onClick={selectProperties}
-          disabled={!selectedShape}
-          aria-current={mobileTab === 'properties' ? 'page' : undefined}
+          className="fixed inset-0 z-30 bg-black/25 lg:hidden"
+          aria-label="Cerrar herramientas"
+          onClick={closePanel}
+        />
+      ) : null}
+
+      <div className="relative z-40">
+        {panelOpen ? (
+          <div
+            role="dialog"
+            aria-modal="true"
+            className={
+              'absolute bottom-full left-0 right-0 rounded-t-2xl border border-b-0 border-neutral-200/90 bg-[#f8f9fb] shadow-[0_-10px_28px_rgba(0,0,0,0.14)] ' +
+              panelPopupClass(mobileTab)
+            }
+            style={{ WebkitOverflowScrolling: 'touch' }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            {mobileTab === 'properties' && selectedShape ? (
+              <MockupEditPanel
+                mode="mobile"
+                selectedShape={selectedShape}
+                {...rest}
+              />
+            ) : mobileTab === 'properties' ? (
+              <p className="px-4 py-4 text-sm text-neutral-500">
+                Selecciona un elemento en el mockup para editar propiedades.
+              </p>
+            ) : (
+              <EditorPanel
+                mode="mobile"
+                hideHeader
+                embedded
+                activePanel={activePanel}
+                setActivePanel={setActivePanel}
+                {...rest}
+              />
+            )}
+          </div>
+        ) : null}
+
+        <div
           className={
-            'flex h-[48px] min-w-[48px] shrink-0 cursor-pointer flex-col items-center justify-center rounded-xl px-2 transition ' +
-            (mobileTab === 'properties'
-              ? 'bg-violet-600 text-white'
-              : selectedShape
-                ? 'text-neutral-300 hover:bg-white/10'
-                : 'cursor-not-allowed text-neutral-600 opacity-50')
+            'flex shrink-0 items-stretch gap-1.5 border-t border-black/20 bg-[#12121a] px-2 ' +
+            TAB_BAR_H
           }
         >
-          <span className="flex h-7 w-7 items-center justify-center text-base font-bold">
-            ⚙
-          </span>
-          <span className="mt-0.5 text-[10px] font-bold">Props</span>
-        </button>
-        {rest.canContinue ? (
-          <a
-            href={rest.whatsappDesignHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Cotizar por WhatsApp"
-            className="ml-auto flex h-[48px] min-w-[48px] shrink-0 flex-col items-center justify-center rounded-xl bg-[#25D366] px-2 text-white"
-          >
-            <span className="text-lg leading-none" aria-hidden>
-              💬
-            </span>
-            <span className="mt-0.5 text-[9px] font-bold">WA</span>
-          </a>
-        ) : null}
-      </div>
-
-      <div
-        className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain"
-        style={{ WebkitOverflowScrolling: 'touch' }}
-      >
-        {mobileTab === 'properties' && selectedShape ? (
-          <MockupEditPanel mode="mobile" selectedShape={selectedShape} {...rest} />
-        ) : mobileTab !== 'properties' ? (
-          <EditorPanel
-            mode="mobile"
-            hideHeader
-            embedded
+          <EditorSidebarNav
+            layout="dock"
             activePanel={activePanel}
-            setActivePanel={setActivePanel}
-            {...rest}
+            openTab={mobileTab}
+            onSelect={selectTool}
           />
-        ) : (
-          <p className="px-4 py-6 text-sm text-neutral-500">
-            Selecciona un elemento en el mockup para editar propiedades.
-          </p>
-        )}
+          <button
+            type="button"
+            onClick={selectProperties}
+            disabled={!selectedShape}
+            aria-current={mobileTab === 'properties' ? 'page' : undefined}
+            className={
+              'flex h-[64px] min-w-[64px] shrink-0 cursor-pointer flex-col items-center justify-center rounded-xl px-2 transition ' +
+              (mobileTab === 'properties'
+                ? 'bg-violet-600 text-white'
+                : selectedShape
+                  ? 'text-neutral-300 hover:bg-white/10'
+                  : 'cursor-not-allowed text-neutral-600 opacity-50')
+            }
+          >
+            <span className="flex h-9 w-9 items-center justify-center text-xl font-bold">
+              ⚙
+            </span>
+            <span className="mt-0.5 text-xs font-bold">Props</span>
+          </button>
+        </div>
       </div>
 
-      <div className="shrink-0 space-y-1.5 border-t border-neutral-200 bg-white px-3 py-2 pb-[max(6px,env(safe-area-inset-bottom))]">
-        {rest.canContinue ? (
-          <a
-            href={rest.whatsappDesignHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-10 w-full items-center justify-center rounded-xl bg-[#25D366] text-sm font-bold text-white"
-          >
-            Cotizar por WhatsApp
-          </a>
-        ) : null}
+      <div className="relative z-40 shrink-0 border-t border-neutral-200 bg-white px-3 py-3 pb-[max(8px,env(safe-area-inset-bottom))]">
         <Link
           href="/comprar"
-          className="block text-center text-xs font-semibold text-violet-700"
+          className="block py-1 text-center text-sm font-semibold text-violet-700"
         >
           Guardar pedido
         </Link>

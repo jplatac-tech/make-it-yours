@@ -19,6 +19,10 @@
 
 No uses `Front.png` / `Back.png` en el catálogo (son mockups, no diseños).
 
+3. Tras añadir o **borrar** archivos en `imagenes/` o `presets/`, ejecuta **`npm run process-designs`** (regenera `sin-fondo/` y actualiza el catálogo). Si solo borraste imágenes, basta con **`npm run sync-catalog`**.
+
+El listado del editor sale **solo** de los PNG que existen en `sin-fondo/` — lo que elimines del disco deja de mostrarse.
+
 ## Añadir más gráficos locales (galería SVG/posters)
 
 1. Guarda SVG o PNG en `presets/` o `uploads/`

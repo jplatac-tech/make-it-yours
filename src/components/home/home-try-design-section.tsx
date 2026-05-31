@@ -3,25 +3,37 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { getFeaturedHomeDesigns } from '../../lib/catalog-designs'
+import { MOCKUP_PRINT_AREAS } from '../../lib/mockup-assets'
+import {
+  loadImageDimensions,
+  fitImageInitialInPrintArea,
+} from '../../lib/resolve-image-src'
+import { resolveAndPrepareDesignImage } from '../../lib/remove-background'
 import { EDITOR_PATH, saveEditorSession } from '../../lib/start-editor'
 import { TemplateLink } from '../editor/template-link'
 
 const FEATURED = getFeaturedHomeDesigns(20)
+const PRINT_AREA = MOCKUP_PRINT_AREAS.FRONT
 
-const PRINT_AREA = { x: 125, y: 238, width: 150, height: 150 }
+const CHECKER =
+  'linear-gradient(45deg, #e8e8e8 25%, transparent 25%), linear-gradient(-45deg, #e8e8e8 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e8e8e8 75%), linear-gradient(-45deg, transparent 75%, #e8e8e8 75%)'
 
-function startWithDesign(src: string) {
+function startWithDesign(
+  src: string,
+  width: number,
+  height: number,
+) {
   saveEditorSession({
     shapesByZone: {
       FRONT: [
         {
           id: `home-${Date.now()}`,
           type: 'image',
-          x: PRINT_AREA.x + 15,
-          y: PRINT_AREA.y + 15,
+          x: PRINT_AREA.x + PRINT_AREA.width / 2 - width / 2,
+          y: PRINT_AREA.y + PRINT_AREA.height / 2 - height / 2,
           src,
-          width: 130,
-          height: 130,
+          width,
+          height,
           scale: 1,
         },
       ],
@@ -34,9 +46,22 @@ function startWithDesign(src: string) {
 export function HomeTryDesignSection() {
   const [loadingSrc, setLoadingSrc] = useState<string | null>(null)
 
-  const pickDesign = (src: string) => {
+  const pickDesign = async (src: string) => {
     setLoadingSrc(src)
-    startWithDesign(src)
+    try {
+      const prepared = await resolveAndPrepareDesignImage(src)
+      const dims = await loadImageDimensions(prepared)
+      const { width, height } = fitImageInitialInPrintArea(
+        dims.width,
+        dims.height,
+        PRINT_AREA,
+        0.55,
+      )
+      startWithDesign(prepared, width, height)
+    } catch {
+      const { width, height } = fitImageInitialInPrintArea(100, 100, PRINT_AREA, 0.55)
+      startWithDesign(src, width, height)
+    }
   }
 
   return (
@@ -50,8 +75,9 @@ export function HomeTryDesignSection() {
             Elige un gráfico y ábrelo en el editor
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-neutral-600">
-            Toca una imagen para colocarla en el mockup del crewneck. También
-            puedes empezar en blanco y añadir más diseños dentro del editor.
+            Los diseños del catálogo ya vienen sin fondo para verse bien en
+            cualquier color de suéter. Al abrirlos aparecen en un tamaño cómodo
+            en el mockup; puedes agrandarlos o moverlos después.
           </p>
         </div>
 
@@ -76,10 +102,18 @@ export function HomeTryDesignSection() {
               key={design.id}
               type="button"
               disabled={loadingSrc !== null}
-              onClick={() => pickDesign(design.src)}
-              className="group cursor-pointer overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50 text-left shadow-sm transition hover:border-violet-400 hover:shadow-md disabled:opacity-60"
+              onClick={() => void pickDesign(design.src)}
+              className="group cursor-pointer overflow-hidden rounded-xl border border-neutral-200 bg-white text-left shadow-sm transition hover:border-violet-400 hover:shadow-md disabled:opacity-60"
             >
-              <div className="flex aspect-square items-center justify-center p-2">
+              <div
+                className="flex aspect-square items-center justify-center p-2"
+                style={{
+                  backgroundColor: '#f5f5f5',
+                  backgroundImage: CHECKER,
+                  backgroundSize: '12px 12px',
+                  backgroundPosition: '0 0, 0 6px, 6px -6px, -6px 0',
+                }}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={design.src}

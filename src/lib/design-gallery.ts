@@ -1,8 +1,5 @@
 /**
- * Recursos con licencia apta para merch / uso comercial en esta tienda:
- * - presets/: SVG creados para el proyecto (libre uso en la app)
- * - posters: Wikimedia Commons — dominio público (US) o licencia del archivo
- * - openmoji: OpenMoji (CC BY-SA 4.0) — atribución en UI
+ * Recursos extra (posters Wikimedia). Los gráficos SVG locales se eliminaron del disco.
  */
 
 export type GalleryItem = {
@@ -15,16 +12,8 @@ export type GalleryItem = {
   tags?: string[]
 }
 
-const PRESET_DESIGNS: GalleryItem[] = [
-  { id: 'preset-retro-sun', title: 'Sol retro', category: 'preset', src: '/gallery/presets/retro-sun.svg', license: 'Proyecto', tags: ['vintage'] },
-  { id: 'preset-punk-stripes', title: 'Rayas punk', category: 'preset', src: '/gallery/presets/punk-stripes.svg', license: 'Proyecto', tags: ['punk'] },
-  { id: 'preset-rock-bolt', title: 'Rayo rock', category: 'preset', src: '/gallery/presets/rock-bolt.svg', license: 'Proyecto', tags: ['rock'] },
-  { id: 'preset-minimal-circle', title: 'Círculos minimal', category: 'preset', src: '/gallery/presets/minimal-circles.svg', license: 'Proyecto', tags: ['minimal'] },
-  { id: 'preset-flame', title: 'Llama', category: 'preset', src: '/gallery/presets/flame.svg', license: 'Proyecto', tags: ['fuego'] },
-  { id: 'preset-star', title: 'Estrella', category: 'preset', src: '/gallery/presets/star-badge.svg', license: 'Proyecto', tags: ['badge'] },
-  { id: 'preset-wings', title: 'Alas', category: 'preset', src: '/gallery/presets/wings.svg', license: 'Proyecto', tags: ['street'] },
-  { id: 'preset-smile', title: 'Smiley', category: 'preset', src: '/gallery/presets/smile.svg', license: 'Proyecto', tags: ['fun'] },
-]
+/** Sin SVG en disco — solo posters externos */
+export const GALLERY_PRESETS: GalleryItem[] = []
 
 /** Posters históricos — Wikimedia Commons (ver cada archivo) */
 const BAND_POSTERS: GalleryItem[] = [
@@ -66,11 +55,10 @@ const BAND_POSTERS: GalleryItem[] = [
   },
 ]
 
-export const DESIGN_GALLERY: GalleryItem[] = [...PRESET_DESIGNS, ...BAND_POSTERS]
+export const DESIGN_GALLERY: GalleryItem[] = [...GALLERY_PRESETS, ...BAND_POSTERS]
 
-export const GALLERY_PRESETS = PRESET_DESIGNS
 export const GALLERY_BAND_POSTERS = BAND_POSTERS
 
 export const GALLERY_LICENSE_NOTE =
-  'Gráficos del proyecto y dominio público (Wikimedia) pueden usarse en pedidos de esta tienda. Posters de Commons: ver licencia en cada obra.'
+  'Posters de Wikimedia Commons: ver licencia en cada obra. Los diseños del catálogo principal están en la pestaña Diseños.'
 

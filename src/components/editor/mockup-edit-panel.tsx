@@ -15,6 +15,8 @@ type Props = {
   onRemove: () => void
   cropMode: boolean
   onToggleCrop: () => void
+  onRemoveBackground?: () => void
+  removingBackground?: boolean
 }
 
 /** Barra lateral derecha (PC) o pestaña Props (móvil) */
@@ -29,6 +31,8 @@ export function MockupEditPanel({
   onRemove,
   cropMode,
   onToggleCrop,
+  onRemoveBackground,
+  removingBackground,
 }: Props) {
   const content = selectedShape ? (
     <div className="space-y-5">
@@ -53,6 +57,8 @@ export function MockupEditPanel({
           onRemove={onRemove}
           cropMode={cropMode}
           onToggleCrop={onToggleCrop}
+          onRemoveBackground={onRemoveBackground}
+          removingBackground={removingBackground}
         />
       </div>
     </div>

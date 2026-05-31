@@ -22,22 +22,13 @@ export function CrewneckMockup({
   className = '',
 }: Props) {
   const photoSrc = getCrewneckMockupSrc(color as MockupColorKey, view)
-  const colorLabel =
-    color === 'HEATHER_GRAY'
-      ? 'Gris jaspe'
-      : color === 'BLACK'
-        ? 'Negro'
-        : color === 'BEIGE'
-          ? 'Beige'
-          : 'Blanco'
 
   return (
     <div
-      className={`relative overflow-hidden bg-[#e8eaed] ${className}`}
+      className={`pointer-events-none relative overflow-hidden bg-[#e8eaed] ${className}`}
       style={{ aspectRatio: '400 / 520' }}
       aria-hidden
     >
-      {/* img nativo: evita compresión de next/image (quality 75 + resize) */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         key={`${color}-${view}`}
@@ -47,10 +38,6 @@ export function CrewneckMockup({
         className="absolute inset-0 h-full w-full object-contain object-center"
         style={{ imageRendering: 'auto' }}
       />
-
-      <div className="pointer-events-none absolute top-2 left-2 rounded-md bg-black/50 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
-        Crewneck unisex · {colorLabel}
-      </div>
     </div>
   )
 }

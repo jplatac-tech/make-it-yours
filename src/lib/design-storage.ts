@@ -16,9 +16,12 @@ export function loadDesign(): string | null {
   return localStorage.getItem(DESIGN_STORAGE_KEY)
 }
 
+export const DESIGN_SAVE_EVENT = 'make-it-yours-design-save'
+
 export function saveDesign(json: string) {
   if (typeof window === 'undefined') return
   localStorage.setItem(DESIGN_STORAGE_KEY, json)
+  window.dispatchEvent(new CustomEvent(DESIGN_SAVE_EVENT))
 }
 
 export function saveDesignPayload(payload: StoredDesign & Record<string, unknown>) {

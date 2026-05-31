@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 import type { EditorPanelId } from './editor-panel'
 
-type DockOpenTab = EditorPanelId | 'properties' | null
+export type DockOpenTab = EditorPanelId | 'properties' | null
 
 const ITEMS: {
   id: EditorPanelId
@@ -16,7 +16,7 @@ const ITEMS: {
     Icon: ({ active }) => (
       <svg
         viewBox="0 0 24 24"
-        className="h-[18px] w-[18px]"
+        className="h-[22px] w-[22px]"
         fill="none"
         stroke="currentColor"
         strokeWidth={active ? 2.2 : 1.75}
@@ -48,7 +48,7 @@ const ITEMS: {
     Icon: ({ active }) => (
       <svg
         viewBox="0 0 24 24"
-        className="h-[18px] w-[18px]"
+        className="h-[22px] w-[22px]"
         fill="none"
         stroke="currentColor"
         strokeWidth={active ? 2.2 : 1.75}
@@ -64,7 +64,7 @@ const ITEMS: {
     Icon: ({ active }) => (
       <svg
         viewBox="0 0 24 24"
-        className="h-[18px] w-[18px]"
+        className="h-[22px] w-[22px]"
         fill="none"
         stroke="currentColor"
         strokeWidth={active ? 2.2 : 1.75}
@@ -107,16 +107,16 @@ export function EditorSidebarNav({
               aria-current={active ? 'page' : undefined}
               onClick={() => onSelect(item.id)}
               className={
-                'flex h-[48px] min-w-[48px] flex-1 max-w-[72px] cursor-pointer flex-col items-center justify-center rounded-xl px-1 transition ' +
+                'flex h-[64px] min-h-[64px] min-w-[56px] flex-1 max-w-[88px] cursor-pointer flex-col items-center justify-center rounded-xl px-1.5 transition ' +
                 (active
                   ? 'bg-violet-600 text-white shadow-sm'
                   : 'text-neutral-400 hover:bg-white/10 hover:text-neutral-200')
               }
             >
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center">
                 <item.Icon active={active} />
               </span>
-              <span className="mt-0.5 truncate text-[10px] font-bold leading-none">
+              <span className="mt-1 truncate text-xs font-bold leading-none">
                 {item.label}
               </span>
             </button>

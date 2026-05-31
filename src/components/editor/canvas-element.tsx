@@ -36,7 +36,7 @@ type Props = {
 }
 
 const handleClass =
-  'absolute z-30 cursor-pointer rounded-full border-2 border-white bg-violet-600 shadow-md'
+  'absolute z-[60] cursor-pointer rounded-full border-2 border-white bg-violet-600 shadow-md touch-none'
 
 export function CanvasElement({
   shape,
@@ -64,19 +64,24 @@ export function CanvasElement({
   const cropEdge = px(ui.cropEdge)
   const selInset = px(ui.handleOffset)
 
+  const hitPad = fixedScreenControls ? Math.max(0, (44 - handle) / 2) : 0
+
   const cornerHandle = (
     cursor: string,
     pos: { left?: number; right?: number; top?: number; bottom?: number },
   ): React.CSSProperties => {
     const style: React.CSSProperties = {
-      width: handle,
-      height: handle,
+      width: handle + hitPad * 2,
+      height: handle + hitPad * 2,
       cursor,
+      boxSizing: 'border-box',
+      padding: hitPad,
+      backgroundClip: 'content-box',
     }
-    if (pos.left !== undefined) style.left = -pos.left
-    if (pos.right !== undefined) style.right = -pos.right
-    if (pos.top !== undefined) style.top = -pos.top
-    if (pos.bottom !== undefined) style.bottom = -pos.bottom
+    if (pos.left !== undefined) style.left = -(handleOff + hitPad)
+    if (pos.right !== undefined) style.right = -(handleOff + hitPad)
+    if (pos.top !== undefined) style.top = -(handleOff + hitPad)
+    if (pos.bottom !== undefined) style.bottom = -(handleOff + hitPad)
     return style
   }
 
@@ -88,7 +93,7 @@ export function CanvasElement({
         top: shape.y,
         transform: getShapeTransform(shape),
         transformOrigin: 'center center',
-        zIndex: isSelected ? 20 : 10,
+        zIndex: isSelected ? 50 : 10,
         opacity: shape.opacity ?? 1,
       }}
       className="touch-none"
@@ -178,7 +183,7 @@ export function CanvasElement({
         {isSelected && !cropMode ? (
           <>
             <div
-              className="absolute left-1/2 z-30 flex -translate-x-1/2 flex-col items-center"
+              className="absolute left-1/2 z-[60] flex -translate-x-1/2 flex-col items-center"
               style={{ top: -rotateTop }}
             >
               <div
