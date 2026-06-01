@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { PRODUCTS, type ProductSlug } from '../../lib/products'
-import { buildWhatsAppUrl, formatQuickQuoteMessage } from '../../lib/whatsapp'
-
 type ProductRow = {
   slug: string
   name: string
@@ -15,11 +13,7 @@ type ProductRow = {
 
 const formatPrice = (value: number) => `$${value.toFixed(0)}`
 
-export function ProductCatalogGrid({
-  showQuoteLink = true,
-}: {
-  showQuoteLink?: boolean
-}) {
+export function ProductCatalogGrid() {
   const [products, setProducts] = useState<ProductRow[]>(() =>
     Object.values(PRODUCTS),
   )
@@ -81,18 +75,6 @@ export function ProductCatalogGrid({
                 </Link>
               </div>
             </div>
-            {showQuoteLink ? (
-              <a
-                href={buildWhatsAppUrl(
-                  formatQuickQuoteMessage(product.name),
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 text-center text-xs font-semibold text-emerald-700 hover:underline"
-              >
-                Cotizar por WhatsApp
-              </a>
-            ) : null}
           </div>
         </article>
       ))}

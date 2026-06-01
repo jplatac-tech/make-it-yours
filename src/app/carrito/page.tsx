@@ -4,32 +4,11 @@ import Link from 'next/link'
 import { useAppState } from '../../components/app-state/app-state-provider'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
-import {
-  buildWhatsAppUrl,
-  formatCartWhatsAppMessage,
-} from '../../lib/whatsapp'
-
 const formatPrice = (n: number) => `$${n.toFixed(0)}`
 
 export default function CartPage() {
-  const {
-    cartItems,
-    totalPrice,
-    removeFromCart,
-    updateCartQuantity,
-    profile,
-  } = useAppState()
-
-  const checkoutHref =
-    cartItems.length > 0
-      ? buildWhatsAppUrl(
-          formatCartWhatsAppMessage(
-            cartItems,
-            totalPrice,
-            profile?.name,
-          ),
-        )
-      : '#'
+  const { cartItems, totalPrice, removeFromCart, updateCartQuantity } =
+    useAppState()
 
   return (
     <main className="container py-12 md:py-16">
@@ -95,17 +74,9 @@ export default function CartPage() {
               {formatPrice(totalPrice)}
             </p>
             <p className="mt-4 text-sm text-neutral-600">
-              Al continuar se abre WhatsApp con el detalle de tu pedido listo
-              para enviar.
+              Usa <strong>Enviar carrito por WhatsApp</strong> en la barra
+              superior para mandar el detalle del pedido.
             </p>
-            <a
-              href={checkoutHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#20bd5a]"
-            >
-              Enviar carrito por WhatsApp
-            </a>
             <Link
               href="/disenar/editor"
               className="mt-3 block text-center text-sm font-semibold text-violet-700 hover:underline"

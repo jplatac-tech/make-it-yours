@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { ProductCatalogGrid } from '../components/catalog/product-catalog-grid'
-import { buildWhatsAppUrl, formatQuickQuoteMessage } from '../lib/whatsapp'
 import { EDITOR_PATH, PROBAR_DISENO_PATH } from '../lib/start-editor'
 
 const HOW_IT_WORKS = [
@@ -22,8 +21,6 @@ const HOW_IT_WORKS = [
 ] as const
 
 export default function HomePage() {
-  const whatsappHref = buildWhatsAppUrl(formatQuickQuoteMessage())
-
   return (
     <>
       <section className="border-b border-neutral-200 bg-gradient-to-b from-violet-50/80 to-[var(--background)]">
@@ -54,14 +51,6 @@ export default function HomePage() {
                 >
                   Ir al editor vacío
                 </Link>
-                <a
-                  href={whatsappHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-full border border-emerald-300 bg-emerald-50 px-8 py-3.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100"
-                >
-                  Cotizar por WhatsApp
-                </a>
               </div>
             </div>
 

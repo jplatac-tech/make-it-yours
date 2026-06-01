@@ -2,15 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { buildWhatsAppUrl, formatQuickQuoteMessage } from '../../lib/whatsapp'
-
 export function SiteFooter() {
   const pathname = usePathname()
   if (pathname === '/disenar' || pathname.startsWith('/disenar/')) {
     return null
   }
-
-  const whatsappHref = buildWhatsAppUrl(formatQuickQuoteMessage())
 
   return (
     <footer className="border-t border-neutral-200 py-10">
@@ -20,14 +16,6 @@ export function SiteFooter() {
           <Link href="/probar-diseno">Probar diseño</Link>
           <Link href="/disenar/editor">Editor</Link>
           <Link href="/carrito">Carrito</Link>
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-emerald-700"
-          >
-            WhatsApp
-          </a>
         </div>
       </div>
     </footer>

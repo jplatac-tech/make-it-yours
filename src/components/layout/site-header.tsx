@@ -23,7 +23,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
 export function SiteHeader() {
   const { totalItems } = useAppState()
   const pathname = usePathname()
-  const whatsappHref = useNavWhatsAppHref()
+  const wa = useNavWhatsAppHref()
   const isEditor =
     pathname === '/disenar' || pathname.startsWith('/disenar/')
 
@@ -71,17 +71,19 @@ export function SiteHeader() {
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <a
-            href={whatsappHref}
+            href={wa.enabled ? wa.href : undefined}
             target="_blank"
             rel="noopener noreferrer"
-            className={waButtonClass}
-            title="Cotizar por WhatsApp"
+            aria-disabled={!wa.enabled}
+            className={
+              waButtonClass +
+              (wa.enabled ? '' : ' pointer-events-none opacity-45')
+            }
+            title={wa.label}
           >
             <WhatsAppIcon className="h-4 w-4 shrink-0 fill-current sm:h-[18px] sm:w-[18px]" />
-            <span className="max-[380px]:hidden sm:inline">
-              Cotizar por WhatsApp
-            </span>
-            <span className="hidden max-[380px]:inline">Cotizar</span>
+            <span className="max-[380px]:hidden sm:inline">{wa.label}</span>
+            <span className="hidden max-[380px]:inline">{wa.shortLabel}</span>
           </a>
           <Link
             href="/carrito"

@@ -10,11 +10,6 @@ import {
   PRODUCT_SIZES,
   type ProductSlug,
 } from '../../lib/products'
-import {
-  buildWhatsAppUrl,
-  formatQuickQuoteMessage,
-} from '../../lib/whatsapp'
-
 type Product = {
   slug: ProductSlug
   name: string
@@ -34,8 +29,6 @@ export function ProductoDetail({ product }: { product: Product }) {
     () => product.price * quantity,
     [product.price, quantity],
   )
-
-  const whatsappHref = buildWhatsAppUrl(formatQuickQuoteMessage(product.name))
 
   return (
     <div className="mt-8 grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
@@ -123,15 +116,11 @@ export function ProductoDetail({ product }: { product: Product }) {
           >
             Diseñar esta prenda
           </Link>
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center rounded-full bg-[#25D366] px-5 py-3 text-sm font-semibold text-white hover:bg-[#20bd5a]"
-          >
-            Cotizar por WhatsApp
-          </a>
         </div>
+        <p className="text-sm text-neutral-500">
+          Para cotizar esta prenda, usa <strong>Cotizar por WhatsApp</strong> en
+          la barra superior.
+        </p>
 
         <ul className="space-y-2 rounded-2xl border border-neutral-200 bg-white p-5 text-sm text-neutral-600">
           <li>Estampado en frente y espalda con medidas máximas en el editor.</li>

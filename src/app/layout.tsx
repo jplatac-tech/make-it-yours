@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { SiteFooter } from '../components/layout/site-footer'
 import { SiteHeader } from '../components/layout/site-header'
-import { WhatsAppFab } from '../components/layout/whatsapp-fab'
 import { AppStateProvider } from '../components/app-state/app-state-provider'
 import { WebVitalsReporter } from '../components/analytics/web-vitals'
 
@@ -29,7 +28,6 @@ export default function RootLayout({
           <SiteHeader />
           <main className="flex min-h-0 flex-1 flex-col">{children}</main>
           <SiteFooter />
-          <WhatsAppFab />
         </AppStateProvider>
       </body>
     </html>
