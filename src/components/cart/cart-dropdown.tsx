@@ -59,7 +59,7 @@ export function CartDropdown({ items, totalPrice, onClose }: Props) {
 
   return (
     <div
-      className="w-[min(calc(100vw-1.5rem),380px)] overflow-hidden rounded-lg bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
+      className="flex max-h-[inherit] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)] md:w-[min(calc(100vw-2rem),380px)] md:rounded-lg"
       role="dialog"
       aria-label="Carrito de compras"
       onPointerDown={(e) => e.stopPropagation()}
@@ -72,7 +72,7 @@ export function CartDropdown({ items, totalPrice, onClose }: Props) {
         <div className="px-5 py-8 text-center">
           <p className="text-sm text-neutral-500">Tu carrito está vacío.</p>
           <Link
-            href="/#catalogo"
+            href="/catalogo"
             onClick={onClose}
             className="mt-4 inline-flex rounded-full border border-neutral-900 px-5 py-2.5 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50"
           >

@@ -10,10 +10,13 @@ export function SiteFooter() {
 
   return (
     <footer className="border-t border-neutral-200 bg-white py-10">
-      <div className="container flex flex-wrap items-center justify-between gap-6 text-sm text-neutral-600">
-        <p className="text-neutral-900">Make It Yours — diseña, estampa y cotiza por WhatsApp.</p>
-        <div className="flex flex-wrap gap-4 font-semibold text-neutral-900">
+      <div className="container flex flex-col gap-6 text-sm text-neutral-600 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <p className="max-w-md text-neutral-900">
+          Make It Yours — diseña, estampa y cotiza por WhatsApp.
+        </p>
+        <div className="flex flex-wrap gap-x-4 gap-y-2 font-semibold text-neutral-900">
           <Link href="/">Inicio</Link>
+          <Link href="/catalogo">Catálogo</Link>
           <Link href="/carrito">Carrito</Link>
         </div>
       </div>

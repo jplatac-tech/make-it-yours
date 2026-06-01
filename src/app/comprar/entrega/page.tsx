@@ -10,7 +10,7 @@ export default async function ComprarEntregaPage({
 
   if (!quoteId) {
     return (
-      <main className="container py-16">
+      <main className="container py-10 sm:py-16">
         <div className="card mx-auto max-w-xl p-8 text-center">
           <h1 className="text-2xl font-semibold text-neutral-950">
             Pedido no encontrado
@@ -32,7 +32,7 @@ export default async function ComprarEntregaPage({
         <p className="text-sm font-medium tracking-[0.2em] text-neutral-500 uppercase">
           Paso 2
         </p>
-        <h1 className="mt-3 text-3xl font-semibold text-neutral-950">
+        <h1 className="mt-3 text-2xl font-semibold text-neutral-950 sm:text-3xl">
           Datos de contacto y entrega
         </h1>
         <p className="mt-4 text-neutral-600">

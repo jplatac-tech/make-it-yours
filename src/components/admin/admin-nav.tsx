@@ -25,7 +25,7 @@ export function AdminNav() {
       className="border-b border-neutral-200 bg-neutral-50"
       aria-label="Admin"
     >
-      <div className="container flex flex-wrap items-center justify-between gap-3 py-3">
+      <div className="container flex flex-col gap-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
           {LINKS.map((item) => {
             const active = pathname.startsWith(item.href)

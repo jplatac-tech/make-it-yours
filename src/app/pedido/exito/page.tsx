@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export default function PedidoExitoPage() {
   return (
-    <main className="container flex min-h-screen items-center justify-center py-16">
+    <main className="container flex min-h-0 flex-1 items-center justify-center py-12 sm:py-16">
       <div className="card w-full max-w-2xl p-8 text-center">
         <p className="text-sm font-medium tracking-[0.2em] text-neutral-500 uppercase">
           Pedido enviado

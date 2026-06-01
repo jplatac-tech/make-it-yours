@@ -33,7 +33,7 @@ export default function ComprarPage() {
 
   if (!ready) {
     return (
-      <main className="container py-16">
+      <main className="container py-10 sm:py-16">
         <p className="text-neutral-600">Cargando tu diseño…</p>
       </main>
     )
@@ -41,7 +41,7 @@ export default function ComprarPage() {
 
   if (!designJson || !hasDesignElements(designJson)) {
     return (
-      <main className="container py-16">
+      <main className="container py-10 sm:py-16">
         <div className="card mx-auto max-w-lg p-8 text-center">
           <h1 className="text-2xl font-semibold text-neutral-950">
             Aún no tienes un diseño
@@ -62,12 +62,12 @@ export default function ComprarPage() {
   }
 
   return (
-    <main className="container py-12 lg:py-16">
+    <main className="container py-10 sm:py-12 lg:py-16">
       <div className="mx-auto max-w-2xl">
         <p className="text-sm font-medium tracking-[0.2em] text-neutral-500 uppercase">
           Pedido con diseño
         </p>
-        <h1 className="mt-3 text-3xl font-semibold text-neutral-950">
+        <h1 className="mt-3 text-2xl font-semibold text-neutral-950 sm:text-3xl">
           Enviar diseño para cotizar
         </h1>
         <p className="mt-3 text-neutral-600">

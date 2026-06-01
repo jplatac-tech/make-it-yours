@@ -1,13 +1,13 @@
-import { ProductCatalogGrid } from '../components/catalog/product-catalog-grid'
+import { HomeEditorPreviewSection } from '../components/home/home-editor-preview-section'
 import { HomeHero } from '../components/home/home-hero'
+import { HomeTrendsSection } from '../components/home/home-trends-section'
 
 export default function HomePage() {
   return (
     <>
       <HomeHero />
-      <section id="catalogo" className="scroll-mt-[60px] bg-white">
-        <ProductCatalogGrid />
-      </section>
+      <HomeTrendsSection />
+      <HomeEditorPreviewSection />
     </>
   )
 }

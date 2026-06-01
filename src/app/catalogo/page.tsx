@@ -1,6 +1,11 @@
-import { redirect } from 'next/navigation'
+import { ProductCatalogGrid } from '../../components/catalog/product-catalog-grid'
 
-/** El catálogo de prendas solo se muestra en la pantalla de inicio */
+export const metadata = {
+  title: 'Catálogo',
+  description:
+    'Todas las prendas personalizables: filtros por estilo, precios y enlace al editor.',
+}
+
 export default function CatalogoPage() {
-  redirect('/#catalogo')
+  return <ProductCatalogGrid />
 }

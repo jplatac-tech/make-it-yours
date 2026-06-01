@@ -8,13 +8,13 @@ export default async function AdminQuotesPage() {
   const { quotes, dbUnavailable } = await getAdminQuotes()
 
   return (
-    <main className="container py-16">
+    <main className="container py-10 sm:py-16">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium tracking-[0.2em] text-neutral-500 uppercase">
             Admin
           </p>
-          <h1 className="mt-3 text-3xl font-semibold text-neutral-950">
+          <h1 className="mt-3 text-2xl font-semibold text-neutral-950 sm:text-3xl">
             Pedidos recibidos
           </h1>
           <p className="mt-2 text-neutral-600">
@@ -40,8 +40,8 @@ export default async function AdminQuotesPage() {
         </div>
       ) : null}
 
-      <div className="card mt-8 overflow-hidden">
-        <table className="min-w-full border-collapse text-sm">
+      <div className="card mt-8 overflow-x-auto">
+        <table className="min-w-[640px] w-full border-collapse text-sm">
           <thead className="bg-neutral-50">
             <tr className="text-left text-neutral-500">
               <th className="px-4 py-3">Pedido</th>
@@ -57,7 +57,7 @@ export default async function AdminQuotesPage() {
             {quotes.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={7}
                   className="px-4 py-8 text-center text-neutral-500"
                 >
                   {dbUnavailable

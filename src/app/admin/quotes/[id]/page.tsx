@@ -113,7 +113,7 @@ export default async function AdminQuoteDetailPage({
   )}`
 
   return (
-    <main className="container py-16">
+    <main className="container py-10 sm:py-16">
       <Link href="/admin/quotes" className="text-sm text-neutral-500">
         ← Volver a pedidos
       </Link>
@@ -123,7 +123,7 @@ export default async function AdminQuoteDetailPage({
           <p className="text-sm font-medium tracking-[0.2em] text-neutral-500 uppercase">
             Pedido de producción
           </p>
-          <h1 className="mt-3 text-3xl font-semibold text-neutral-950">
+          <h1 className="mt-3 break-all text-2xl font-semibold text-neutral-950 sm:text-3xl">
             {quote.requestNumber}
           </h1>
           <p className="mt-2 text-neutral-600">

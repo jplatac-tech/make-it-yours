@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useAppState } from '../app-state/app-state-provider'
+import { HeaderPopover } from '../layout/header-popover'
 import { CartDropdown } from './cart-dropdown'
 
 function BagIcon({ className }: { className?: string }) {
@@ -39,17 +40,12 @@ export function CartHeaderTrigger({
   useEffect(() => {
     if (!open) return
     const close = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (window.matchMedia('(min-width: 1024px)').matches) {
+        if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+      }
     }
     document.addEventListener('mousedown', close)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', close)
-      document.removeEventListener('keydown', onKey)
-    }
+    return () => document.removeEventListener('mousedown', close)
   }, [open])
 
   const badge =
@@ -68,7 +64,7 @@ export function CartHeaderTrigger({
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => setOpen((o) => !o)}
-        className={`relative inline-flex h-10 w-10 items-center justify-center rounded-full transition duration-200 hover:opacity-100 ${iconClassName} ${isDark ? 'hover:bg-white/10' : 'hover:bg-neutral-100'}`}
+        className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full transition duration-200 hover:opacity-100 sm:h-10 sm:w-10 ${iconClassName} ${isDark ? 'hover:bg-white/10' : 'hover:bg-neutral-100'}`}
       >
         <BagIcon />
         {totalItems > 0 ? (
@@ -83,15 +79,13 @@ export function CartHeaderTrigger({
         ) : null}
       </button>
 
-      {open ? (
-        <div className="absolute top-full right-0 z-[60] mt-2">
-          <CartDropdown
-            items={cartItems}
-            totalPrice={totalPrice}
-            onClose={() => setOpen(false)}
-          />
-        </div>
-      ) : null}
+      <HeaderPopover open={open} onClose={() => setOpen(false)} zIndex={70}>
+        <CartDropdown
+          items={cartItems}
+          totalPrice={totalPrice}
+          onClose={() => setOpen(false)}
+        />
+      </HeaderPopover>
     </div>
   )
 }

@@ -246,7 +246,7 @@ export function DesignTemplatesHub() {
         )}
 
         <div className="mt-12 flex flex-wrap justify-center gap-6 text-sm font-semibold">
-          <Link href="/#catalogo" className="text-violet-700 hover:underline">
+          <Link href="/catalogo" className="text-violet-700 hover:underline">
             Ver catálogo de prendas
           </Link>
           <Link href="/carrito" className="text-neutral-700 hover:underline">

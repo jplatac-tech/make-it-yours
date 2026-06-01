@@ -35,8 +35,8 @@ export default async function ProductoPage({
   }
 
   return (
-    <main className="container py-12 md:py-16">
-      <Link href="/#catalogo" className="text-sm font-medium text-neutral-500">
+    <main className="container py-10 sm:py-12 md:py-16">
+      <Link href="/catalogo" className="text-sm font-medium text-neutral-500">
         ← Catálogo
       </Link>
       <ProductoDetail product={product} />

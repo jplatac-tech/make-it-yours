@@ -65,73 +65,76 @@ function CartLineRow({
   const imageAlt = `${item.name}${item.size ? ` talla ${item.size}` : ''}`
 
   return (
-    <li className="border-b border-neutral-200 py-8 first:pt-0">
-      <div className="flex gap-5 sm:gap-8">
-        <div className="w-[100px] shrink-0 sm:w-[140px]">
-          <div className="relative aspect-square overflow-hidden rounded-sm bg-neutral-100">
-            <Image
-              src={getCartProductImage(item.slug)}
-              alt={imageAlt}
-              fill
-              className="object-cover object-center"
-              sizes="140px"
-            />
+    <li className="border-b border-neutral-200 py-6 first:pt-0 sm:py-8">
+      <div className="flex flex-col gap-4">
+        <div className="flex gap-4 sm:gap-6">
+          <div className="w-24 shrink-0 sm:w-32">
+            <div className="relative aspect-square overflow-hidden rounded-sm bg-neutral-100">
+              <Image
+                src={getCartProductImage(item.slug)}
+                alt={imageAlt}
+                fill
+                className="object-cover object-center"
+                sizes="(max-width: 640px) 96px, 128px"
+              />
+            </div>
           </div>
-          <div className="mt-3 inline-flex items-center rounded-full border border-neutral-300 bg-white">
-            <button
-              type="button"
-              title="Eliminar"
-              aria-label="Eliminar del carrito"
-              onClick={onRemove}
-              className="flex h-9 w-10 cursor-pointer items-center justify-center text-neutral-700 transition hover:bg-neutral-50"
-            >
-              <IconTrash />
-            </button>
-            <button
-              type="button"
-              title="Disminuir cantidad"
-              aria-label="Disminuir cantidad"
-              disabled={item.quantity <= 1}
-              onClick={() => onQuantityChange(item.quantity - 1)}
-              className="flex h-9 w-10 cursor-pointer items-center justify-center text-lg font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-30"
-            >
-              −
-            </button>
-            <span className="flex h-9 min-w-[2rem] items-center justify-center border-x border-neutral-300 px-1 text-sm font-medium tabular-nums text-neutral-900">
-              {item.quantity}
-            </span>
-            <button
-              type="button"
-              title="Aumentar cantidad"
-              aria-label="Aumentar cantidad"
-              onClick={() => onQuantityChange(item.quantity + 1)}
-              className="flex h-9 w-10 cursor-pointer items-center justify-center text-lg font-medium text-neutral-700 transition hover:bg-neutral-50"
-            >
-              +
-            </button>
+
+          <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 sm:flex-row sm:gap-6">
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold text-neutral-900 sm:text-lg">
+                {item.name}
+              </h2>
+              <p className="mt-1 text-sm text-neutral-600">
+                {getCartProductDescription(item.slug)}
+              </p>
+              {item.size ? (
+                <p className="mt-2 text-sm text-neutral-800">
+                  Talla:{' '}
+                  <span className="underline decoration-neutral-400 underline-offset-2">
+                    {item.size}
+                  </span>
+                </p>
+              ) : null}
+            </div>
+            <p className="shrink-0 text-base font-medium text-neutral-900 sm:text-right">
+              {formatCartPrice(lineTotal)}
+            </p>
           </div>
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col sm:flex-row sm:justify-between sm:gap-6">
-          <div className="min-w-0 pr-2">
-            <h2 className="text-base font-semibold text-neutral-900 sm:text-lg">
-              {item.name}
-            </h2>
-            <p className="mt-1 text-sm text-neutral-600">
-              {getCartProductDescription(item.slug)}
-            </p>
-            {item.size ? (
-              <p className="mt-2 text-sm text-neutral-800">
-                Talla:{' '}
-                <span className="underline decoration-neutral-400 underline-offset-2">
-                  {item.size}
-                </span>
-              </p>
-            ) : null}
-          </div>
-          <p className="mt-3 shrink-0 text-base font-medium text-neutral-900 sm:mt-0 sm:text-right">
-            {formatCartPrice(lineTotal)}
-          </p>
+        <div className="inline-flex w-full max-w-[11.5rem] items-center rounded-full border border-neutral-300 bg-white">
+          <button
+            type="button"
+            title="Eliminar"
+            aria-label="Eliminar del carrito"
+            onClick={onRemove}
+            className="flex h-10 w-11 cursor-pointer items-center justify-center text-neutral-700 transition hover:bg-neutral-50"
+          >
+            <IconTrash />
+          </button>
+          <button
+            type="button"
+            title="Disminuir cantidad"
+            aria-label="Disminuir cantidad"
+            disabled={item.quantity <= 1}
+            onClick={() => onQuantityChange(item.quantity - 1)}
+            className="flex h-10 w-11 cursor-pointer items-center justify-center text-lg font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-30"
+          >
+            −
+          </button>
+          <span className="flex h-10 min-w-[2.25rem] flex-1 items-center justify-center border-x border-neutral-300 px-1 text-sm font-medium tabular-nums text-neutral-900">
+            {item.quantity}
+          </span>
+          <button
+            type="button"
+            title="Aumentar cantidad"
+            aria-label="Aumentar cantidad"
+            onClick={() => onQuantityChange(item.quantity + 1)}
+            className="flex h-10 w-11 cursor-pointer items-center justify-center text-lg font-medium text-neutral-700 transition hover:bg-neutral-50"
+          >
+            +
+          </button>
         </div>
       </div>
     </li>
@@ -201,7 +204,7 @@ export function CartPageView() {
         <p className="mt-4 text-neutral-600">Tu carrito está vacío.</p>
         {hasDraft ? <div className="mt-8"><DesignDraftBanner /></div> : null}
         <Link
-          href="/#catalogo"
+          href="/catalogo"
           className="mt-8 inline-flex min-h-[48px] items-center justify-center rounded-full bg-neutral-900 px-8 text-sm font-semibold text-white transition hover:bg-neutral-800"
         >
           Seguir comprando
@@ -226,7 +229,7 @@ export function CartPageView() {
         </div>
       ) : null}
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_minmax(280px,380px)] lg:gap-16 xl:gap-24">
+      <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_minmax(280px,380px)] lg:gap-16 xl:gap-24">
         <section>
           <ul>
             {cartItems.map((item) => (
@@ -282,7 +285,7 @@ export function CartPageView() {
           </a>
 
           <Link
-            href="/#catalogo"
+            href="/catalogo"
             className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-neutral-900 hover:underline"
           >
             <ChevronLeft />

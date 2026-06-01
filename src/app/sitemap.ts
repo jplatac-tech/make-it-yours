@@ -11,6 +11,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: base, lastModified: now, changeFrequency: 'weekly', priority: 1 },
     {
+      url: `${base}/catalogo`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    },
+    {
       url: `${base}/probar-diseno`,
       lastModified: now,
       changeFrequency: 'monthly',

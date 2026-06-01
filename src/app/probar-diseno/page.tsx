@@ -2,9 +2,9 @@ import Link from 'next/link'
 import { HomeTryDesignSection } from '../../components/home/home-try-design-section'
 
 export const metadata = {
-  title: 'Probar diseño',
+  title: 'Probar un diseño',
   description:
-    'Elige un gráfico para tu crewneck y ábrelo en el editor con mockup real.',
+    'Elige un gráfico para tu prenda y ábrelo en el editor con mockup real.',
 }
 
 export default function ProbarDisenoPage() {

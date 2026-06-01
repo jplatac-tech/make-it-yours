@@ -35,8 +35,8 @@ export function ProductoDetail({ product }: { product: Product }) {
   const meta = CATALOG_PRODUCT_META[product.slug]
 
   return (
-    <div className="mt-8 grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-      <div className="flex items-center justify-center rounded-2xl border border-neutral-200 bg-[#d8dde3] p-6 shadow-sm">
+    <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10">
+      <div className="flex items-center justify-center rounded-2xl border border-neutral-200 bg-[#d8dde3] p-4 shadow-sm sm:p-6">
         <div className="w-full max-w-[320px]">
           <CrewneckMockup
             view="FRONT"
@@ -51,7 +51,7 @@ export function ProductoDetail({ product }: { product: Product }) {
           <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-800">
             {product.type}
           </span>
-          <h1 className="mt-4 text-3xl font-semibold text-neutral-950">
+          <h1 className="mt-4 text-2xl font-semibold text-neutral-950 sm:text-3xl">
             {product.name}
           </h1>
           <p className="mt-4 text-neutral-600">{product.description}</p>
@@ -60,7 +60,9 @@ export function ProductoDetail({ product }: { product: Product }) {
               {meta.highlight}
             </p>
           ) : null}
-          <p className="mt-6 text-4xl font-bold">{formatPrice(product.price)}</p>
+          <p className="mt-6 text-3xl font-bold sm:text-4xl">
+            {formatPrice(product.price)}
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -101,7 +103,7 @@ export function ProductoDetail({ product }: { product: Product }) {
           </span>
         </p>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <Link
             href={editorHref}
             className="btn btn-primary inline-flex min-h-[48px] w-full items-center justify-center"

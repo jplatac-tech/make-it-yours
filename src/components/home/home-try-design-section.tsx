@@ -68,19 +68,19 @@ export function HomeTryDesignSection() {
       <div className="container py-14 md:py-20">
         <div className="max-w-2xl">
           <p className="text-sm font-semibold tracking-[0.2em] text-neutral-500 uppercase">
-            Probar diseño
+            Probar un diseño
           </p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-neutral-950 md:text-4xl">
+          <h2 className="mt-3 text-2xl font-bold tracking-tight text-neutral-950 sm:text-3xl md:text-4xl">
             Elige un gráfico y ábrelo en el editor
           </h2>
-          <p className="mt-4 text-lg leading-relaxed text-neutral-600">
+          <p className="mt-4 text-base leading-relaxed text-neutral-600 sm:text-lg">
             Los diseños del catálogo ya vienen sin fondo para verse bien en
             cualquier color de suéter. Al abrirlos aparecen en un tamaño cómodo
             en el mockup; puedes agrandarlos o moverlos después.
           </p>
         </div>
 
-        <div className="mt-10 grid grid-cols-2 gap-3 min-[480px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <div className="mt-10 grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 min-[520px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {FEATURED.map((design) => (
             <button
               key={design.id}

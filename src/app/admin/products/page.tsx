@@ -46,8 +46,8 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <main className="container py-16">
-      <h1 className="text-2xl font-semibold">Admin productos</h1>
+    <main className="container py-10 sm:py-16">
+      <h1 className="text-xl font-semibold sm:text-2xl">Admin productos</h1>
       <p className="mt-2 text-sm text-neutral-500">
         Lista en <code className="text-xs">data/products.json</code>. Para crear o
         eliminar, usa <code className="text-xs">ADMIN_CREATION_SECRET</code> en el
@@ -124,15 +124,15 @@ export default function AdminProductsPage() {
             {products.map((p) => (
               <div
                 key={p.slug}
-                className="flex items-center justify-between rounded-lg border p-3"
+                className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
               >
-                <div>
-                  <p className="font-semibold">{p.name}</p>
-                  <p className="text-sm text-neutral-500">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{p.name}</p>
+                  <p className="truncate text-sm text-neutral-500">
                     {p.slug} · ${p.price}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex shrink-0 gap-2">
                   <button
                     className="rounded-full bg-red-600 px-3 py-1 text-white"
                     onClick={() => handleDelete(p.slug)}
