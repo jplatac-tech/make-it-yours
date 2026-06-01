@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
+import { isAdminEmail } from '../../../../lib/admin-emails'
 import {
   ADMIN_SESSION_COOKIE,
   adminSessionCookieOptions,
-  isAdminEmail,
   signAdminSession,
-} from '../../../../lib/admin-auth'
+} from '../../../../lib/admin-session'
 
 export async function POST(request: Request) {
   try {
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
     }
 
-    const token = signAdminSession(email)
+    const token = await signAdminSession(email)
     if (!token) {
       return NextResponse.json(
         { error: 'ADMIN_SESSION_SECRET no configurado en el servidor' },

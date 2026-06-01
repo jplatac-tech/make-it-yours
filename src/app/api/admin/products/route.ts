@@ -4,9 +4,12 @@ import { join } from 'path'
 import {
   ADMIN_SESSION_COOKIE,
   verifyAdminSession,
-} from '../../../../lib/admin-auth'
+} from '../../../../lib/admin-session'
 
-function canMutateProducts(request: NextRequest, secret?: string): boolean {
+async function canMutateProducts(
+  request: NextRequest,
+  secret?: string,
+): Promise<boolean> {
   const expected = process.env.ADMIN_CREATION_SECRET
   if (expected && secret === expected) return true
   const token = request.cookies.get(ADMIN_SESSION_COOKIE)?.value
@@ -32,7 +35,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { product, secret } = body as { product?: any; secret?: string }
-    if (!canMutateProducts(request, secret)) {
+    if (!(await canMutateProducts(request, secret))) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
 
@@ -64,7 +67,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json()
     const { slug, secret } = body as { slug?: string; secret?: string }
-    if (!canMutateProducts(request, secret)) {
+    if (!(await canMutateProducts(request, secret))) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
 
