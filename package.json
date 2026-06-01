@@ -10,7 +10,8 @@
     "lint": "next lint",
     "postinstall": "prisma generate",
     "process-designs": "node scripts/strip-catalog-backgrounds.mjs",
-    "sync-catalog": "node scripts/sync-catalog-manifest.mjs"
+    "sync-catalog": "node scripts/sync-catalog-manifest.mjs",
+    "hero-image": "node scripts/generate-hero-image.mjs"
   },
   "dependencies": {
     "@imgly/background-removal": "^1.7.0",

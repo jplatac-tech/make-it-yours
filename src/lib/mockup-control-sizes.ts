@@ -1,28 +1,34 @@
 /** Tamaño en pantalla (px) de controles del mockup — no cambian con el zoom del lienzo */
 
 export const MOCKUP_UI = {
-  handle: 18,
-  handleOffset: 10,
-  rotateButton: 36,
-  rotateStem: 20,
-  rotateOffsetTop: 48,
-  actionBarMinHeight: 36,
-  actionBarFontSize: 13,
-  actionBarPaddingX: 14,
-  actionBarGap: 8,
-  actionBarOffsetBottom: 48,
-  cropEdge: 12,
-  selectionBorder: 2,
+  /** Círculo blanco en esquinas (estilo Canva) */
+  corner: 11,
+  /** Pastilla blanca en lados */
+  sideW: 5,
+  sideH: 22,
+  rotate: 26,
+  rotateStem: 18,
+  rotateOffsetBottom: 34,
+  canvasPadBottom: 72,
+  contextBarGap: 8,
+  contextBarOffsetTop: 12,
+  cropEdge: 7,
+  selectionBorder: 1.5,
 } as const
 
-/** Móvil: controles siempre del mismo tamaño en pantalla (área táctil amplia) */
+/** Móvil: mismos px de pantalla; se convierten con uiCanvasPx(stageScale) */
 export const MOCKUP_UI_MOBILE = {
-  handle: 22,
-  handleOffset: 12,
-  rotateButton: 40,
-  rotateStem: 22,
-  rotateOffsetTop: 52,
-  cropEdge: 14,
+  corner: 12,
+  sideW: 5,
+  sideH: 24,
+  rotate: 28,
+  rotateStem: 16,
+  rotateOffsetBottom: 34,
+  canvasPadBottom: 80,
+  contextBarGap: 8,
+  contextBarOffsetTop: 10,
+  cropEdge: 8,
+  selectionBorder: 1.5,
 } as const
 
 /** Convierte px de pantalla a px en el lienzo (el padre aplica scale(zoom)) */

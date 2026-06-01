@@ -1,82 +1,177 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
+import {
+  CATALOG_SECTIONS,
+  formatCatalogPrice,
+  toCatalogProduct,
+  type CatalogProduct,
+} from '../../lib/product-catalog'
+import { useInView } from '../../hooks/use-in-view'
 import { PRODUCTS, type ProductSlug } from '../../lib/products'
+
 type ProductRow = {
   slug: string
   name: string
   description: string
   price: number
   type?: string
+  badge?: string
 }
 
-const formatPrice = (value: number) => `$${value.toFixed(0)}`
+const MAX_PRODUCTS_PER_ROW = 4
+
+function catalogGridClass(count: number) {
+  if (count <= 1) {
+    return 'mx-auto grid w-full max-w-[320px] grid-cols-1 justify-items-center gap-6'
+  }
+  if (count === 2) {
+    return 'mx-auto grid w-full max-w-[720px] grid-cols-2 justify-items-center gap-5 sm:gap-6'
+  }
+  if (count === 3) {
+    return 'mx-auto grid w-full max-w-[1020px] grid-cols-1 justify-items-center gap-6 min-[520px]:grid-cols-3'
+  }
+  return 'mx-auto grid w-full max-w-[1320px] grid-cols-2 justify-items-center gap-5 min-[720px]:grid-cols-4 sm:gap-6'
+}
+
+function ProductCard({
+  product,
+  index,
+}: {
+  product: CatalogProduct
+  index: number
+}) {
+  return (
+    <Link
+      href={`/productos/${product.slug}`}
+      className="group flex w-full max-w-[300px] flex-col transition duration-300 hover:-translate-y-1"
+      style={{ transitionDelay: `${Math.min(index, 4) * 40}ms` }}
+    >
+      <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-[#f5f5f5]">
+        <Image
+          src={product.image}
+          alt={product.name}
+          fill
+          sizes="(max-width: 640px) 260px, 320px"
+          className="object-cover object-center transition duration-500 ease-out group-hover:scale-[1.03]"
+        />
+      </div>
+      <div className="mt-3 pr-4">
+        {product.badge ? (
+          <p className="text-sm font-semibold text-[#ce4800]">{product.badge}</p>
+        ) : null}
+        <h3 className="mt-1 text-base font-semibold leading-snug text-neutral-900">
+          {product.name}
+        </h3>
+        <p className="mt-1 line-clamp-2 text-sm leading-snug text-neutral-600">
+          {product.description}
+        </p>
+        <p className="mt-1 text-sm font-medium text-neutral-700">
+          {product.colorCount}{' '}
+          {product.colorCount === 1 ? 'color' : 'colores'}
+        </p>
+        <p className="mt-2 text-base font-medium text-neutral-900">
+          {formatCatalogPrice(product.price)}
+        </p>
+      </div>
+    </Link>
+  )
+}
+
+function CatalogRow({
+  title,
+  situation,
+  products,
+  sectionIndex,
+}: {
+  title: string
+  situation: string
+  products: CatalogProduct[]
+  sectionIndex: number
+}) {
+  const { ref, visible } = useInView<HTMLElement>(0.08)
+
+  if (products.length === 0) return null
+
+  const rowProducts = products.slice(0, MAX_PRODUCTS_PER_ROW)
+
+  return (
+    <section
+      ref={ref}
+      className={
+        'motion-in-view border-b border-neutral-200 py-10 last:border-b-0 md:py-14 ' +
+        (visible ? 'is-visible' : '')
+      }
+      style={{ transitionDelay: `${sectionIndex * 90}ms` }}
+    >
+      <div className="container mb-8 text-center">
+        <h2 className="text-2xl font-semibold tracking-tight text-neutral-900 md:text-[28px]">
+          {title}
+        </h2>
+        <p className="mt-1 text-sm text-neutral-600 md:text-base">{situation}</p>
+      </div>
+      <div className={`container px-4 sm:px-6 ${catalogGridClass(rowProducts.length)}`}>
+        {rowProducts.map((product, index) => (
+          <ProductCard
+            key={`${title}-${product.slug}`}
+            product={product}
+            index={index}
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
 
 export function ProductCatalogGrid() {
-  const [products, setProducts] = useState<ProductRow[]>(() =>
-    Object.values(PRODUCTS),
-  )
+  const [rows, setRows] = useState<ProductRow[]>(() => Object.values(PRODUCTS))
 
   useEffect(() => {
     fetch('/api/admin/products')
       .then((r) => r.json())
       .then((list: ProductRow[]) => {
-        if (Array.isArray(list) && list.length > 0) setProducts(list)
+        if (Array.isArray(list) && list.length > 0) setRows(list)
       })
       .catch(() => {})
   }, [])
 
+  const bySlug = useMemo(() => {
+    const map = new Map<ProductSlug, CatalogProduct>()
+    for (const row of rows) {
+      const p = toCatalogProduct({
+        ...row,
+        badge:
+          row.badge ??
+          (row.slug === 'crewneck-unisex' ? 'Lo más nuevo' : undefined),
+      })
+      if (p) map.set(p.slug, p)
+    }
+    return map
+  }, [rows])
+
+  const sections = useMemo(
+    () =>
+      CATALOG_SECTIONS.map((section) => ({
+        ...section,
+        products: section.productSlugs
+          .map((slug) => bySlug.get(slug))
+          .filter((p): p is CatalogProduct => Boolean(p)),
+      })).filter((s) => s.products.length > 0),
+    [bySlug],
+  )
+
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {products.map((product) => (
-        <article
-          key={product.slug}
-          className="group flex flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition hover:border-violet-200 hover:shadow-md"
-        >
-          <div className="relative flex h-44 items-center justify-center bg-gradient-to-br from-violet-50 to-slate-50">
-            <svg
-              viewBox="0 0 120 140"
-              className="h-32 w-auto text-violet-300/80 transition group-hover:scale-105"
-              aria-hidden
-            >
-              <path
-                fill="currentColor"
-                d="M30 42 L12 48 L8 78 L14 98 L32 94 L36 62 Z M90 42 L108 48 L112 78 L106 98 L88 94 L84 62 Z M36 42 H84 L88 108 L86 124 H60 L34 124 L32 108 Z"
-              />
-            </svg>
-            <span className="absolute top-3 right-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold tracking-wide text-violet-700 uppercase">
-              {product.type ?? 'PRENDA'}
-            </span>
-          </div>
-          <div className="flex flex-1 flex-col p-5">
-            <h3 className="text-lg font-semibold text-neutral-900">
-              {product.name}
-            </h3>
-            <p className="mt-2 flex-1 text-sm leading-relaxed text-neutral-600">
-              {product.description}
-            </p>
-            <div className="mt-5 flex items-center justify-between gap-3">
-              <p className="text-xl font-bold text-neutral-950">
-                {formatPrice(product.price)}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Link
-                  href={`/productos/${product.slug}`}
-                  className="rounded-full bg-neutral-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-neutral-800"
-                >
-                  Ver
-                </Link>
-                <Link
-                  href="/disenar/editor"
-                  className="rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-semibold text-violet-800 transition hover:bg-violet-100"
-                >
-                  Diseñar
-                </Link>
-              </div>
-            </div>
-          </div>
-        </article>
+    <div className="bg-white">
+      {sections.map((section, sectionIndex) => (
+        <CatalogRow
+          key={section.id}
+          title={section.title}
+          situation={section.situation}
+          products={section.products}
+          sectionIndex={sectionIndex}
+        />
       ))}
     </div>
   )

@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -44,7 +43,7 @@ export function ProductoDetail({ product }: { product: Product }) {
 
       <section className="space-y-6">
         <div>
-          <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-800">
+          <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-800">
             {product.type}
           </span>
           <h1 className="mt-4 text-3xl font-semibold text-neutral-950">
@@ -92,34 +91,26 @@ export function ProductoDetail({ product }: { product: Product }) {
           </span>
         </p>
 
-        <div className="flex flex-wrap gap-3">
-          <Button
-            type="button"
-            className="bg-violet-600 hover:opacity-90"
-            onClick={() =>
-              addToCart(
-                {
-                  slug: product.slug,
-                  name: product.name,
-                  price: product.price,
-                  size: selectedSize,
-                },
-                quantity,
-              )
-            }
-          >
-            Añadir al carrito
-          </Button>
-          <Link
-            href="/disenar/editor"
-            className="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-semibold text-neutral-900 hover:bg-neutral-50"
-          >
-            Diseñar esta prenda
-          </Link>
-        </div>
+        <Button
+          type="button"
+          className="hover:opacity-90"
+          onClick={() =>
+            addToCart(
+              {
+                slug: product.slug,
+                name: product.name,
+                price: product.price,
+                size: selectedSize,
+              },
+              quantity,
+            )
+          }
+        >
+          Añadir al carrito
+        </Button>
         <p className="text-sm text-neutral-500">
-          Para cotizar esta prenda, usa <strong>Cotizar por WhatsApp</strong> en
-          la barra superior.
+          Para personalizar el estampado, usa <strong>Ir al editor</strong> en el
+          menú. Para cotizar, <strong>Cotizar</strong> en la barra superior.
         </p>
 
         <ul className="space-y-2 rounded-2xl border border-neutral-200 bg-white p-5 text-sm text-neutral-600">

@@ -14,14 +14,12 @@ export default function PedidoExitoPage() {
           Revisaremos tu prenda y te contactaremos con los siguientes pasos.
         </p>
 
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link href="/disenar/editor" className="btn btn-primary">
-            Crear otro diseño
-          </Link>
-          <Link href="/" className="btn btn-secondary">
-            Volver al inicio
-          </Link>
-        </div>
+        <Link href="/" className="btn btn-primary mt-8 inline-flex">
+          Volver al inicio
+        </Link>
+        <p className="mt-4 text-sm text-neutral-600">
+          ¿Otro diseño? Usa <strong>Crear</strong> en el menú.
+        </p>
       </div>
     </main>
   )

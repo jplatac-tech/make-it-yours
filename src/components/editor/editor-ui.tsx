@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 
 export function DropdownField({
   label,
@@ -54,7 +54,126 @@ export function DropdownField({
   )
 }
 
-const PRINT_SWATCHES = [
+const FONT_SIZE_PRESETS = [
+  8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 80, 96, 120, 160, 200,
+] as const
+
+const MIN_FONT_SIZE = 8
+const MAX_FONT_SIZE = 512
+
+export function FontSizePickerField({
+  value,
+  onChange,
+}: {
+  value: number
+  onChange: (size: number) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const customId = useId()
+
+  useEffect(() => {
+    if (!open) return
+    const close = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [open])
+
+  const commitCustom = (raw: string) => {
+    const n = Math.round(Number(raw))
+    if (!Number.isFinite(n)) return
+    onChange(Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, n)))
+  }
+
+  const rounded = Math.round(value)
+  const presets = useMemo(() => {
+    const set = new Set<number>(FONT_SIZE_PRESETS)
+    if (rounded >= MIN_FONT_SIZE && rounded <= MAX_FONT_SIZE) set.add(rounded)
+    return [...set].sort((a, b) => a - b)
+  }, [rounded])
+
+  return (
+    <div ref={rootRef} className="relative">
+      <span className="mb-1.5 block text-sm font-semibold text-neutral-600">
+        Tamaño (px)
+      </span>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="flex min-h-[40px] w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-left transition hover:border-violet-300 hover:bg-violet-50"
+      >
+        <span className="text-sm font-semibold tabular-nums text-neutral-900">
+          {rounded}
+        </span>
+        <span
+          className={
+            'shrink-0 text-[10px] text-neutral-400 transition ' +
+            (open ? 'rotate-180' : '')
+          }
+        >
+          ▼
+        </span>
+      </button>
+      {open ? (
+        <div className="absolute top-full right-0 left-0 z-[80] mt-1 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl">
+          <div className="max-h-52 overflow-y-auto overscroll-contain p-2 [-webkit-overflow-scrolling:touch]">
+            <div className="grid grid-cols-4 gap-1.5">
+              {presets.map((size) => {
+                const active = rounded === size
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => {
+                      onChange(size)
+                      setOpen(false)
+                    }}
+                    className={
+                      'flex min-h-[36px] cursor-pointer items-center justify-center rounded-lg text-sm font-semibold tabular-nums transition ' +
+                      (active
+                        ? 'bg-violet-600 text-white shadow-sm'
+                        : 'bg-neutral-50 text-neutral-800 hover:bg-violet-50 hover:text-violet-900')
+                    }
+                  >
+                    {size}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <div className="border-t border-neutral-100 bg-neutral-50/80 px-3 py-2.5">
+            <label
+              htmlFor={customId}
+              className="text-[11px] font-semibold text-neutral-500"
+            >
+              Otro tamaño
+            </label>
+            <input
+              id={customId}
+              type="number"
+              min={MIN_FONT_SIZE}
+              max={MAX_FONT_SIZE}
+              defaultValue={rounded}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  commitCustom(e.currentTarget.value)
+                  setOpen(false)
+                }
+              }}
+              onBlur={(e) => commitCustom(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-2 text-sm font-semibold tabular-nums text-neutral-900 outline-none focus:border-violet-400"
+            />
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+export const PRINT_SWATCHES = [
   '#111827',
   '#ffffff',
   '#ef4444',

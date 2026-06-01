@@ -2,6 +2,8 @@ import type { DesignShape } from '../types/design'
 import type { PrintZoneValue, ProductColorValue } from './products'
 import { GARMENT_COLOR_HEX } from './garment-colors'
 import { getPrintZone } from './products'
+import { drawImageWithCrop } from './image-crop'
+import { sortShapesByLayer } from './shape-layers'
 
 const CANVAS_W = 400
 const CANVAS_H = 520
@@ -84,12 +86,37 @@ export async function renderMockupDataUrl(
     ctx.setLineDash([])
   }
 
-  for (const shape of shapes) {
+  const ordered = sortShapesByLayer(shapes)
+
+  for (const shape of ordered) {
     const b = getShapeBounds(shape)
     const scale = shape.scale ?? 1
+
     if (shape.type === 'image' && shape.src) {
+      const img = await new Promise<HTMLImageElement | null>((resolve) => {
+        const el = new window.Image()
+        el.onload = () => resolve(el)
+        el.onerror = () => resolve(null)
+        el.src = shape.src!
+      })
+      if (!img) continue
+      const sc = shape.scale ?? 1
+      const w = (shape.width ?? b.width) * sc
+      const h = (shape.height ?? b.height) * sc
+      const x = shape.x
+      const y = shape.y
+      if (shape.flipX) {
+        ctx.save()
+        ctx.translate(x + w, y)
+        ctx.scale(-1, 1)
+        drawImageWithCrop(ctx, img, shape, 0, 0, w, h)
+        ctx.restore()
+      } else {
+        drawImageWithCrop(ctx, img, shape, x, y, w, h)
+      }
       continue
     }
+
     ctx.save()
     ctx.translate(shape.x + b.width / 2, shape.y + b.height / 2)
     ctx.scale(scale, scale)
@@ -100,30 +127,6 @@ export async function renderMockupDataUrl(
     ctx.fillText(shape.text ?? '', 0, 0)
     ctx.restore()
   }
-
-  const imageShapes = shapes.filter((s) => s.type === 'image' && s.src)
-  await Promise.all(
-    imageShapes.map(
-      (shape) =>
-        new Promise<void>((resolve) => {
-          const img = new window.Image()
-          img.onload = () => {
-            const b = getShapeBounds(shape)
-            const sc = shape.scale ?? 1
-            ctx.drawImage(
-              img,
-              shape.x,
-              shape.y,
-              (shape.width ?? b.width) * sc,
-              (shape.height ?? b.height) * sc,
-            )
-            resolve()
-          }
-          img.onerror = () => resolve()
-          img.src = shape.src!
-        }),
-    ),
-  )
 
   return canvas.toDataURL('image/png')
 }
@@ -168,35 +171,36 @@ export async function renderTechnicalDataUrl(
     ctx.restore()
   }
 
-  for (const shape of shapes) {
-    if (shape.type !== 'image') drawTextShape(shape)
-  }
+  const ordered = sortShapesByLayer(shapes)
 
-  const images = shapes.filter((s) => s.type === 'image' && s.src)
-  await Promise.all(
-    images.map(
-      (shape) =>
-        new Promise<void>((resolve) => {
-          const img = new window.Image()
-          img.onload = () => {
-            const b = getShapeBounds(shape)
-            const relX = (shape.x - zone.printArea.x) * scaleX
-            const relY = (shape.y - zone.printArea.y) * scaleY
-            const sc = shape.scale ?? 1
-            ctx.drawImage(
-              img,
-              relX,
-              relY,
-              (shape.width ?? b.width) * scaleX * sc,
-              (shape.height ?? b.height) * scaleY * sc,
-            )
-            resolve()
-          }
-          img.onerror = () => resolve()
-          img.src = shape.src!
-        }),
-    ),
-  )
+  for (const shape of ordered) {
+    if (shape.type === 'image' && shape.src) {
+      const img = await new Promise<HTMLImageElement | null>((resolve) => {
+        const el = new window.Image()
+        el.onload = () => resolve(el)
+        el.onerror = () => resolve(null)
+        el.src = shape.src!
+      })
+      if (!img) continue
+      const b = getShapeBounds(shape)
+      const relX = (shape.x - zone.printArea.x) * scaleX
+      const relY = (shape.y - zone.printArea.y) * scaleY
+      const sc = shape.scale ?? 1
+      const iw = (shape.width ?? b.width) * scaleX * sc
+      const ih = (shape.height ?? b.height) * scaleY * sc
+      if (shape.flipX) {
+        ctx.save()
+        ctx.translate(relX + iw, relY)
+        ctx.scale(-1, 1)
+        drawImageWithCrop(ctx, img, shape, 0, 0, iw, ih)
+        ctx.restore()
+      } else {
+        drawImageWithCrop(ctx, img, shape, relX, relY, iw, ih)
+      }
+    } else {
+      drawTextShape(shape)
+    }
+  }
 
   return canvas.toDataURL('image/png')
 }

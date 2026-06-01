@@ -25,4 +25,8 @@ export type DesignShape = {
   /** 0 = cuadrado, 50 = redondeado, 50+ = círculo en imágenes */
   borderRadius?: number
   opacity?: number
+  /** Voltear horizontalmente (imágenes) */
+  flipX?: boolean
+  /** Orden de apilamiento: mayor = más arriba */
+  layer?: number
 }

@@ -189,9 +189,9 @@ export function MockupContextToolbar({
           title="Eliminar"
           fullWidth={vertical}
           onClick={onRemove}
-          className="bg-red-50 text-sm font-semibold text-red-600 hover:bg-red-100"
+          className="min-h-11 bg-red-600 text-sm font-bold text-white hover:bg-red-700"
         >
-          Eliminar
+          🗑 Eliminar
         </ToolbarBtn>
       </div>
     </div>

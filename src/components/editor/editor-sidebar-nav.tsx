@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 import type { EditorPanelId } from './editor-panel'
 
-export type DockOpenTab = EditorPanelId | 'properties' | null
+export type DockOpenTab = EditorPanelId | null
 
 const ITEMS: {
   id: EditorPanelId
@@ -40,6 +40,23 @@ const ITEMS: {
       >
         T
       </span>
+    ),
+  },
+  {
+    id: 'layers',
+    label: 'Capas',
+    Icon: ({ active }) => (
+      <svg
+        viewBox="0 0 24 24"
+        className="h-[22px] w-[22px]"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={active ? 2.2 : 1.75}
+        aria-hidden
+      >
+        <path d="M12 2v6M12 16v6M4 10h6M14 10h6" strokeLinecap="round" />
+        <rect x="5" y="5" width="14" height="14" rx="2" />
+      </svg>
     ),
   },
   {

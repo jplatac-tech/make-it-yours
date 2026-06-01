@@ -9,12 +9,11 @@ export function SiteFooter() {
   }
 
   return (
-    <footer className="border-t border-neutral-200 py-10">
-      <div className="container flex flex-wrap items-center justify-between gap-6 text-sm text-neutral-500">
-        <p>Make It Yours — diseña, estampa y cotiza por WhatsApp.</p>
-        <div className="flex flex-wrap gap-4 font-semibold text-neutral-700">
-          <Link href="/probar-diseno">Probar diseño</Link>
-          <Link href="/disenar/editor">Editor</Link>
+    <footer className="border-t border-neutral-200 bg-white py-10">
+      <div className="container flex flex-wrap items-center justify-between gap-6 text-sm text-neutral-600">
+        <p className="text-neutral-900">Make It Yours — diseña, estampa y cotiza por WhatsApp.</p>
+        <div className="flex flex-wrap gap-4 font-semibold text-neutral-900">
+          <Link href="/">Inicio</Link>
           <Link href="/carrito">Carrito</Link>
         </div>
       </div>

@@ -20,9 +20,9 @@ import { loadDesign, saveDesign } from '../../lib/design-storage'
 import { CrewneckMockup } from '../product/crewneck-mockup'
 import { EditorPanel, type EditorPanelId } from './editor-panel'
 import { CanvasElement } from './canvas-element'
-import { MockupEditPanel } from './mockup-edit-panel'
-import { MockupViewToggle } from './mockup-view-toggle'
-import { MockupZoomControls } from './mockup-zoom-controls'
+import { MockupEditorChrome } from './mockup-editor-chrome'
+import { MockupWorkspaceToolbar } from './mockup-workspace-toolbar'
+import { MockupPropertiesBar } from './mockup-properties-bar'
 import { getDefaultFontFamily } from '../../lib/editor-fonts'
 import { type TextPreset } from '../../lib/text-presets'
 import type { DesignShape } from '../../types/design'
@@ -42,6 +42,19 @@ import {
   type GuideLines,
 } from '../../lib/alignment-guides'
 import { clampScaleForShape } from '../../lib/size-limits'
+import {
+  applyLayerMove,
+  ensureShapeLayers,
+  getNextLayer,
+  renumberShapeLayers,
+  sortShapesByLayer,
+  type LayerMove,
+} from '../../lib/shape-layers'
+import {
+  bakeImageCrop,
+  clampCropInsets,
+  getCropInsets,
+} from '../../lib/image-crop'
 import {
   preloadBackgroundRemoval,
   resolveAndPrepareDesignImage,
@@ -103,10 +116,8 @@ export function DesignStudio() {
   const [uploadsRefresh, setUploadsRefresh] = useState(0)
   const [canvasZoom, setCanvasZoom] = useState(1)
   const [isDragging, setIsDragging] = useState(false)
-  const [limitWarning, setLimitWarning] = useState<string | null>(null)
   const [cropModeId, setCropModeId] = useState<string | null>(null)
   const [imageProcessing, setImageProcessing] = useState<string | null>(null)
-  const limitTimerRef = useRef<number | null>(null)
   const mockupBackgroundColor = '#d8dde3'
   const [guideLines, setGuideLines] = useState<GuideLines>({
     vertical: [],
@@ -149,6 +160,7 @@ export function DesignStudio() {
     startY: number
     imgW: number
     imgH: number
+    scale: number
     origin: {
       cropTop: number
       cropRight: number
@@ -157,9 +169,9 @@ export function DesignStudio() {
     }
   } | null>(null)
 
-  const MAX_CROP = 0.42
 
   const shapes = shapesByZone[printZone]
+  const sortedShapes = useMemo(() => sortShapesByLayer(shapes), [shapes])
 
   useEffect(() => {
     setSelectedId((id) => {
@@ -227,14 +239,15 @@ export function DesignStudio() {
         }
         if (parsed.shapesByZone) {
           setShapesByZone({
-            FRONT: parsed.shapesByZone.FRONT ?? [],
-            BACK: parsed.shapesByZone.BACK ?? [],
+            FRONT: ensureShapeLayers(parsed.shapesByZone.FRONT ?? []),
+            BACK: ensureShapeLayers(parsed.shapesByZone.BACK ?? []),
           })
         } else if (parsed.shapes?.length) {
           const zone = normalizePrintZone(parsed.printZone)
+          const normalized = ensureShapeLayers(parsed.shapes)
           setShapesByZone({
-            FRONT: zone === 'FRONT' ? parsed.shapes : [],
-            BACK: zone === 'BACK' ? parsed.shapes : [],
+            FRONT: zone === 'FRONT' ? normalized : [],
+            BACK: zone === 'BACK' ? normalized : [],
           })
         }
         if (parsed.productColor) setProductColor(parsed.productColor)
@@ -248,8 +261,12 @@ export function DesignStudio() {
 
     if (tplId) {
       const tpl = getTemplateById(tplId)
-      const front = cloneShapesWithNewIds(tpl?.shapesByZone.FRONT ?? [])
-      const back = cloneShapesWithNewIds(tpl?.shapesByZone.BACK ?? [])
+      const front = ensureShapeLayers(
+        cloneShapesWithNewIds(tpl?.shapesByZone.FRONT ?? []),
+      )
+      const back = ensureShapeLayers(
+        cloneShapesWithNewIds(tpl?.shapesByZone.BACK ?? []),
+      )
       setShapesByZone({ FRONT: front, BACK: back })
       if (tpl?.productColor) setProductColor(tpl.productColor)
     }
@@ -275,12 +292,13 @@ export function DesignStudio() {
     if (!el) return
 
     const update = () => {
-      const pad = 24
-      const w = el.clientWidth - pad
-      const h = el.clientHeight - pad
+      const pad = 16
+      const w = Math.max(0, el.clientWidth - pad)
+      const h = Math.max(0, el.clientHeight - pad)
       const scaleW = w / CANVAS_W
       const scaleH = h / CANVAS_H
-      setMockupFitScale(Math.max(0.28, Math.min(scaleW, scaleH, 1)))
+      const fit = Math.min(scaleW, scaleH)
+      setMockupFitScale(Math.max(0.52, Math.min(fit, 1.2)))
     }
     update()
     const ro = new ResizeObserver(update)
@@ -308,40 +326,27 @@ export function DesignStudio() {
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
       if (cropState.current) {
-        const { id, edge, startX, startY, imgW, imgH, origin } =
+        const { id, edge, startX, startY, imgW, imgH, scale, origin } =
           cropState.current
         const zoom = canvasZoomRef.current || 1
-        const dx = (e.clientX - startX) / zoom / imgW
-        const dy = (e.clientY - startY) / zoom / imgH
+        const dx = (e.clientX - startX) / zoom / (imgW * scale)
+        const dy = (e.clientY - startY) / zoom / (imgH * scale)
         setShapes((s) =>
           s.map((sh) => {
             if (sh.id !== id) return sh
-            const patch: Partial<DesignShape> = {}
-            if (edge === 'top') {
-              patch.cropTop = Math.min(
-                MAX_CROP,
-                Math.max(0, origin.cropTop + dy),
-              )
+            const next = { ...getCropInsets(sh) }
+            if (edge === 'top') next.top = origin.cropTop + dy
+            if (edge === 'bottom') next.bottom = origin.cropBottom - dy
+            if (edge === 'left') next.left = origin.cropLeft + dx
+            if (edge === 'right') next.right = origin.cropRight - dx
+            const clamped = clampCropInsets(next)
+            return {
+              ...sh,
+              cropTop: clamped.top,
+              cropRight: clamped.right,
+              cropBottom: clamped.bottom,
+              cropLeft: clamped.left,
             }
-            if (edge === 'bottom') {
-              patch.cropBottom = Math.min(
-                MAX_CROP,
-                Math.max(0, origin.cropBottom - dy),
-              )
-            }
-            if (edge === 'left') {
-              patch.cropLeft = Math.min(
-                MAX_CROP,
-                Math.max(0, origin.cropLeft + dx),
-              )
-            }
-            if (edge === 'right') {
-              patch.cropRight = Math.min(
-                MAX_CROP,
-                Math.max(0, origin.cropRight - dx),
-              )
-            }
-            return { ...sh, ...patch }
           }),
         )
         return
@@ -483,6 +488,7 @@ export function DesignStudio() {
         fontWeight: 600,
         color: defaultElementColor(productColor),
         rotation: 0,
+        layer: getNextLayer(s),
       },
     ])
     setSelectedId(id)
@@ -506,6 +512,7 @@ export function DesignStudio() {
         letterSpacing: preset.letterSpacing,
         color: defaultElementColor(productColor),
         rotation: 0,
+        layer: getNextLayer(s),
       },
     ])
     setSelectedId(id)
@@ -525,6 +532,7 @@ export function DesignStudio() {
         text: icon,
         fontSize: 52,
         color: defaultElementColor(productColor),
+        layer: getNextLayer(s),
       },
     ])
     setSelectedId(id)
@@ -538,36 +546,22 @@ export function DesignStudio() {
       const area = getPrintZone(zone)?.printArea
       const x = area ? area.x + area.width / 2 - w / 2 : CANVAS_W / 2 - w / 2
       const y = area ? area.y + area.height / 2 - h / 2 : CANVAS_H / 2 - h / 2
-      const newShape: DesignShape = {
-        id,
-        type: 'image',
-        x,
-        y,
-        src,
-        width: w,
-        height: h,
-        scale: 1,
-      }
-
-      const withoutImages = (list: DesignShape[]) =>
-        list.filter((sh) => sh.type !== 'image')
-
       setShapesByZone((prev) => {
-        const hadImage =
-          prev.FRONT.some((sh) => sh.type === 'image') ||
-          prev.BACK.some((sh) => sh.type === 'image')
-        if (hadImage) {
-          setLimitWarning('Solo una imagen en el mockup. Se reemplazó la anterior.')
-          if (limitTimerRef.current) window.clearTimeout(limitTimerRef.current)
-          limitTimerRef.current = window.setTimeout(
-            () => setLimitWarning(null),
-            2500,
-          )
+        const zoneShapes = prev[zone]
+        const newShape: DesignShape = {
+          id,
+          type: 'image',
+          x,
+          y,
+          src,
+          width: w,
+          height: h,
+          scale: 1,
+          layer: getNextLayer(zoneShapes),
         }
         return {
-          FRONT: withoutImages(prev.FRONT),
-          BACK: withoutImages(prev.BACK),
-          [zone]: [...withoutImages(prev[zone]), newShape],
+          ...prev,
+          [zone]: [...zoneShapes, newShape],
         }
       })
       setSelectedId(id)
@@ -652,17 +646,6 @@ export function DesignStudio() {
     }
   }
 
-  const removeBackgroundFromSelected = async () => {
-    if (!selectedShape?.src || selectedShape.type !== 'image') return
-    setImageProcessing('Quitando fondo…')
-    try {
-      const prepared = await removeImageBackground(selectedShape.src)
-      updateShape(selectedShape.id, { src: prepared })
-    } finally {
-      setImageProcessing(null)
-    }
-  }
-
   const addCatalogDesign = (src: string) => {
     void addImageFromSrc(src)
   }
@@ -677,14 +660,32 @@ export function DesignStudio() {
         id,
         x: selectedShape.x + 20,
         y: selectedShape.y + 20,
+        layer: getNextLayer(s),
       },
     ])
     setSelectedId(id)
   }
 
+  const moveShapeLayer = (id: string, move: LayerMove) => {
+    setShapes((s) => applyLayerMove(s, id, move))
+  }
+
+  const selectCanvasShape = (id: string) => {
+    setSelectedId(id)
+    setEditingTextId(null)
+    setCropModeId(null)
+    setMobileTab(null)
+    setActivePanel('layers')
+  }
+
+  const openLayersPanel = () => {
+    setActivePanel('layers')
+    setMobileTab('layers')
+  }
+
   const removeSelected = () => {
     if (!selectedId) return
-    setShapes((s) => s.filter((sh) => sh.id !== selectedId))
+    setShapes((s) => renumberShapeLayers(s.filter((sh) => sh.id !== selectedId)))
     setSelectedId(null)
     setCropModeId(null)
   }
@@ -694,6 +695,7 @@ export function DesignStudio() {
     edge: 'top' | 'right' | 'bottom' | 'left',
     e: React.PointerEvent,
   ) => {
+    const insets = getCropInsets(shape)
     cropState.current = {
       id: shape.id,
       edge,
@@ -701,12 +703,45 @@ export function DesignStudio() {
       startY: e.clientY,
       imgW: shape.width ?? 140,
       imgH: shape.height ?? 140,
+      scale: shape.scale ?? 1,
       origin: {
-        cropTop: shape.cropTop ?? 0,
-        cropRight: shape.cropRight ?? 0,
-        cropBottom: shape.cropBottom ?? 0,
-        cropLeft: shape.cropLeft ?? 0,
+        cropTop: insets.top,
+        cropRight: insets.right,
+        cropBottom: insets.bottom,
+        cropLeft: insets.left,
       },
+    }
+  }
+
+  const finishCrop = async (shapeId: string) => {
+    const shape = shapesRef.current[printZoneRef.current].find(
+      (s) => s.id === shapeId,
+    )
+    if (!shape || shape.type !== 'image') {
+      setCropModeId(null)
+      return
+    }
+    const insets = getCropInsets(shape)
+    if (!insets.top && !insets.right && !insets.bottom && !insets.left) {
+      setCropModeId(null)
+      return
+    }
+    setImageProcessing('Aplicando recorte…')
+    try {
+      const patch = await bakeImageCrop(shape)
+      if (patch) updateShape(shapeId, patch)
+    } finally {
+      setImageProcessing(null)
+      setCropModeId(null)
+    }
+  }
+
+  const toggleCropMode = () => {
+    if (!selectedShape || selectedShape.type !== 'image') return
+    if (cropModeId === selectedShape.id) {
+      void finishCrop(selectedShape.id)
+    } else {
+      setCropModeId(selectedShape.id)
     }
   }
 
@@ -730,8 +765,26 @@ export function DesignStudio() {
     }
   }
 
+  const propertiesToolbar = selectedShape ? (
+    <MockupPropertiesBar
+      embedded
+      shape={selectedShape}
+      printZone={printZone}
+      updateShape={updateShape}
+      onCloseMobilePanel={() => setMobileTab(null)}
+      cropActive={cropModeId === selectedShape.id}
+      onToggleCrop={
+        selectedShape.type === 'image' ? toggleCropMode : undefined
+      }
+      onDuplicate={duplicateSelected}
+      onRemove={removeSelected}
+      onOpenLayersPanel={openLayersPanel}
+    />
+  ) : undefined
+
   return (
-    <div className="flex h-[calc(100dvh-53px)] min-h-0 flex-col overflow-hidden bg-[#eef0f4] max-lg:h-[100dvh] max-lg:max-h-[100dvh] lg:flex-row">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#eef0f4] max-lg:h-[calc(100dvh-52px)] max-lg:max-h-[calc(100dvh-52px)] lg:h-[calc(100dvh-60px)] lg:max-h-[calc(100dvh-60px)] lg:flex-row lg:overflow-hidden">
+      <div className="flex h-full min-h-0 max-h-full shrink-0 overflow-hidden">
       <EditorPanel
         activePanel={activePanel}
         setActivePanel={setActivePanel}
@@ -749,26 +802,33 @@ export function DesignStudio() {
         onUploadSelect={(src) => void addImageFromSrc(src)}
         onUserUpload={handleUserUpload}
         uploadsRefresh={uploadsRefresh}
+        selectedTextShape={
+          selectedShape &&
+          (selectedShape.type === 'text' || selectedShape.type === 'icon')
+            ? selectedShape
+            : null
+        }
+        onTextShapeChange={
+          selectedShape &&
+          (selectedShape.type === 'text' || selectedShape.type === 'icon')
+            ? (patch) => updateShape(selectedShape.id, patch)
+            : undefined
+        }
+        canvasShapes={shapes}
+        selectedShapeId={selectedId}
+        printZone={printZone}
+        onSelectCanvasShape={selectCanvasShape}
+        onMoveShapeLayer={moveShapeLayer}
       />
+      </div>
 
-      <section className="relative z-10 flex min-h-0 min-w-0 flex-1 overflow-hidden">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <div className="hidden shrink-0 border-b border-neutral-200 bg-white px-4 py-2 text-sm text-neutral-600 lg:block">
-            <strong className="text-neutral-900">Editor</strong> ·{' '}
-            {shapes.length} elemento{shapes.length === 1 ? '' : 's'}
-          </div>
-
-          <div className="grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-[#e8ebf0] lg:flex lg:flex-row lg:grid-rows-none">
-            <div
-              ref={mockupFitRef}
-              className="relative flex min-h-0 min-w-0 items-center justify-center overflow-hidden px-3 py-2 lg:min-h-0 lg:flex-1 lg:p-4"
-            >
-              {limitWarning ? (
-                <div className="pointer-events-none absolute top-3 left-1/2 z-30 -translate-x-1/2 rounded-full bg-yellow-50 px-4 py-2 text-sm font-semibold text-yellow-800 shadow">
-                  {limitWarning}
-                </div>
-              ) : null}
-
+      <section className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:h-full lg:max-h-full">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#e8ebf0]">
+          <div
+            ref={mockupFitRef}
+            className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-2 py-2 max-lg:min-h-0 lg:px-6 lg:py-4"
+          >
+            <MockupEditorChrome propertiesToolbar={propertiesToolbar} />
               {imageProcessing ? (
                 <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-black/25">
                   <div className="rounded-2xl bg-white px-6 py-4 text-center shadow-lg">
@@ -782,15 +842,11 @@ export function DesignStudio() {
                 </div>
               ) : null}
 
-              <div className="absolute bottom-2 left-2 z-20 hidden lg:block">
-                <MockupZoomControls
-                  zoom={canvasZoom}
-                  onZoomChange={setCanvasZoom}
-                />
-              </div>
-
               <div
-                className="relative shrink-0 overflow-visible rounded-xl shadow-xl"
+                className={
+                  'relative shrink-0 rounded-xl shadow-xl ' +
+                  (isDesktop ? 'overflow-visible' : 'mx-auto overflow-visible')
+                }
                 style={
                   isDesktop
                     ? {
@@ -806,10 +862,10 @@ export function DesignStudio() {
                 <div
                   ref={canvasRef}
                   className={
-                    'absolute overflow-visible rounded-xl ' +
+                    'overflow-visible rounded-xl ' +
                     (isDesktop
-                      ? 'left-1/2 top-1/2 origin-center'
-                      : 'left-0 top-0 origin-top-left')
+                      ? 'absolute left-1/2 top-1/2 origin-center'
+                      : 'absolute left-0 top-0 origin-top-left')
                   }
                   style={
                     isDesktop
@@ -825,6 +881,7 @@ export function DesignStudio() {
                           width: CANVAS_W,
                           height: CANVAS_H,
                           transform: `scale(${stageScale})`,
+                          transformOrigin: 'top left',
                           backgroundColor: mockupBackgroundColor,
                         }
                   }
@@ -864,7 +921,7 @@ export function DesignStudio() {
                   </div>
                 ) : null}
 
-                {shapes.map((shape) => {
+                {sortedShapes.map((shape) => {
                   const isSelected = shape.id === selectedId
                   const isEditing = shape.id === editingTextId
                   const bounds = getShapeBounds(shape)
@@ -878,12 +935,14 @@ export function DesignStudio() {
                       isEditing={isEditing}
                       cropMode={cropModeId === shape.id}
                       canvasZoom={effectiveCanvasZoom}
-                      fixedScreenControls={!isDesktop}
+                      fixedScreenControls={false}
+                      mobileControls={!isDesktop}
                       onSelect={() => {
                         setSelectedId(shape.id)
-                        setActivePanel(
-                          shape.type === 'image' ? 'designs' : 'text',
-                        )
+                        setMobileTab(null)
+                        if (shape.type !== 'image') {
+                          setActivePanel('text')
+                        }
                       }}
                       onDragStart={(e) => {
                         e.currentTarget.setPointerCapture(e.pointerId)
@@ -921,65 +980,41 @@ export function DesignStudio() {
                         updateShape(shape.id, { text })
                         setEditingTextId(null)
                       }}
+                      onToggleCrop={
+                        isSelected && shape.type === 'image'
+                          ? () => {
+                              if (cropModeId === shape.id) {
+                                void finishCrop(shape.id)
+                              } else {
+                                setCropModeId(shape.id)
+                              }
+                            }
+                          : undefined
+                      }
+                      onRemove={
+                        isSelected ? removeSelected : undefined
+                      }
                     />
                   )
                 })}
                 </div>
-
-                <div
-                  className={
-                    'pointer-events-none absolute z-20 ' +
-                    (isDesktop
-                      ? 'top-2 left-2'
-                      : 'bottom-3 right-3 top-auto left-auto')
-                  }
-                >
-                  <div
-                    className="pointer-events-auto"
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >
-                    <MockupViewToggle
-                      printZone={printZone}
-                      productColor={productColor}
-                      onChange={setPrintZone}
-                      variant="compact"
-                      size={isDesktop ? 'default' : 'large'}
-                    />
-                  </div>
-                </div>
               </div>
-            </div>
-
-            <MockupEditPanel
-              selectedShape={selectedShape}
-              printZone={printZone}
-              canvasW={CANVAS_W}
-              canvasH={CANVAS_H}
-              updateShape={updateShape}
-              onDuplicate={duplicateSelected}
-              onRemove={removeSelected}
-              cropMode={selectedShape ? cropModeId === selectedShape.id : false}
-              onToggleCrop={() => {
-                if (!selectedShape || selectedShape.type !== 'image') return
-                setCropModeId((id) =>
-                  id === selectedShape.id ? null : selectedShape.id,
-                )
-              }}
-              onRemoveBackground={
-                selectedShape?.type === 'image'
-                  ? () => void removeBackgroundFromSelected()
-                  : undefined
-              }
-              removingBackground={imageProcessing !== null}
-            />
           </div>
 
-          <EditorMobileDock
+          <MockupWorkspaceToolbar
+            printZone={printZone}
+            productColor={productColor}
+            onPrintZoneChange={setPrintZone}
+            canvasZoom={canvasZoom}
+            onCanvasZoomChange={setCanvasZoom}
+          />
+        </div>
+
+        <EditorMobileDock
             mobileTab={mobileTab}
             setMobileTab={setMobileTab}
             activePanel={activePanel}
             setActivePanel={setActivePanel}
-            selectedShape={selectedShape}
             productColor={productColor}
             setProductColor={setProductColor}
             onClearSelection={() => {
@@ -994,27 +1029,24 @@ export function DesignStudio() {
             onUploadSelect={(src) => void addImageFromSrc(src)}
             onUserUpload={handleUserUpload}
             uploadsRefresh={uploadsRefresh}
+            canvasShapes={shapes}
+            selectedShapeId={selectedId}
             printZone={printZone}
-            canvasW={CANVAS_W}
-            canvasH={CANVAS_H}
-            updateShape={updateShape}
-            onDuplicate={duplicateSelected}
-            onRemove={removeSelected}
-            cropMode={selectedShape ? cropModeId === selectedShape.id : false}
-            onToggleCrop={() => {
-              if (!selectedShape || selectedShape.type !== 'image') return
-              setCropModeId((id) =>
-                id === selectedShape.id ? null : selectedShape.id,
-              )
-            }}
-            onRemoveBackground={
-              selectedShape?.type === 'image'
-                ? () => void removeBackgroundFromSelected()
+            onSelectCanvasShape={selectCanvasShape}
+            onMoveShapeLayer={moveShapeLayer}
+            selectedTextShape={
+              selectedShape &&
+              (selectedShape.type === 'text' || selectedShape.type === 'icon')
+                ? selectedShape
+                : null
+            }
+            onTextShapeChange={
+              selectedShape &&
+              (selectedShape.type === 'text' || selectedShape.type === 'icon')
+                ? (patch) => updateShape(selectedShape.id, patch)
                 : undefined
             }
-            removingBackground={imageProcessing !== null}
           />
-        </div>
       </section>
     </div>
   )

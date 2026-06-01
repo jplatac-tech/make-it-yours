@@ -1,13 +1,17 @@
 @import 'tailwindcss';
 
 :root {
-  --background: #f7f5f0;
-  --foreground: #171717;
-  --muted: #6b7280;
+  /* Paleta alineada con la home (blanco / negro / gris) */
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --muted: #737373;
   --card: #ffffff;
-  --border: #e5e7eb;
-  --primary: #111827;
+  --border: #e5e5e5;
+  --surface-muted: #f5f5f5;
+  --primary: #404040;
   --primary-foreground: #ffffff;
+  --accent-sale: #ce4800;
+  --ease-out-expo: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * {
@@ -16,6 +20,12 @@
 
 html {
   scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 body {
@@ -34,7 +44,6 @@ body {
 }
 
 a {
-  color: inherit;
   text-decoration: none;
   cursor: pointer;
 }
@@ -59,9 +68,9 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* No forzar height:auto: rompe imágenes cover y botones con altura fija */
 img {
   max-width: 100%;
-  height: auto;
   display: block;
 }
 
@@ -83,16 +92,22 @@ img {
   border-radius: 9999px;
   padding: 0.75rem 1rem;
   font-weight: 600;
-  transition: all 0.2s ease;
+  transition:
+    background-color 0.2s var(--ease-out-expo),
+    color 0.2s var(--ease-out-expo),
+    transform 0.2s var(--ease-out-expo),
+    box-shadow 0.2s var(--ease-out-expo),
+    opacity 0.2s ease;
 }
 
 .btn-primary {
   background: var(--primary);
-  color: var(--primary-foreground);
+  color: var(--primary-foreground) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .btn-primary:hover {
-  opacity: 0.92;
+  background: #525252;
 }
 
 .btn-secondary {
@@ -103,4 +118,83 @@ img {
 
 .btn-secondary:hover {
   background: #f3f4f6;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hero-zoom {
+  from {
+    transform: scale(1.04);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .motion-fade-in-up {
+    animation: fade-in-up 0.7s var(--ease-out-expo) both;
+  }
+
+  .motion-fade-in {
+    animation: fade-in 0.55s ease-out both;
+  }
+
+  .motion-hero-zoom {
+    animation: hero-zoom 1.2s var(--ease-out-expo) both;
+  }
+
+  .motion-delay-1 {
+    animation-delay: 0.12s;
+  }
+  .motion-delay-2 {
+    animation-delay: 0.24s;
+  }
+  .motion-delay-3 {
+    animation-delay: 0.36s;
+  }
+  .motion-delay-4 {
+    animation-delay: 0.48s;
+  }
+  .motion-delay-5 {
+    animation-delay: 0.6s;
+  }
+
+  .motion-in-view {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 0.55s var(--ease-out-expo),
+      transform 0.55s var(--ease-out-expo);
+  }
+
+  .motion-in-view.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-in-view {
+    opacity: 1;
+    transform: none;
+  }
 }

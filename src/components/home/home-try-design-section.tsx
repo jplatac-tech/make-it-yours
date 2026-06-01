@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { getFeaturedHomeDesigns } from '../../lib/catalog-designs'
 import { MOCKUP_PRINT_AREAS } from '../../lib/mockup-assets'
 import {
@@ -68,7 +67,7 @@ export function HomeTryDesignSection() {
     <section className="border-b border-neutral-200 bg-white">
       <div className="container py-14 md:py-20">
         <div className="max-w-2xl">
-          <p className="text-sm font-semibold tracking-[0.2em] text-violet-700 uppercase">
+          <p className="text-sm font-semibold tracking-[0.2em] text-neutral-500 uppercase">
             Probar diseño
           </p>
           <h2 className="mt-3 text-3xl font-bold tracking-tight text-neutral-950 md:text-4xl">
@@ -81,21 +80,6 @@ export function HomeTryDesignSection() {
           </p>
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-3">
-          <TemplateLink
-            templateId="blank"
-            className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-violet-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
-          >
-            Ir al editor vacío
-          </TemplateLink>
-          <Link
-            href={EDITOR_PATH}
-            className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-violet-300 bg-violet-50 px-6 py-3 text-sm font-semibold text-violet-900 transition hover:bg-violet-100"
-          >
-            Abrir editor (más diseños)
-          </Link>
-        </div>
-
         <div className="mt-10 grid grid-cols-2 gap-3 min-[480px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {FEATURED.map((design) => (
             <button
@@ -103,7 +87,7 @@ export function HomeTryDesignSection() {
               type="button"
               disabled={loadingSrc !== null}
               onClick={() => void pickDesign(design.src)}
-              className="group cursor-pointer overflow-hidden rounded-xl border border-neutral-200 bg-white text-left shadow-sm transition hover:border-violet-400 hover:shadow-md disabled:opacity-60"
+              className="group cursor-pointer overflow-hidden rounded-xl border border-neutral-200 bg-white text-left shadow-sm transition hover:border-neutral-950 hover:shadow-md disabled:opacity-60"
             >
               <div
                 className="flex aspect-square items-center justify-center p-2"
@@ -130,9 +114,17 @@ export function HomeTryDesignSection() {
           ))}
         </div>
 
-        <p className="mt-6 text-sm text-neutral-500">
-          Hay más gráficos, texto e iconos en la pestaña{' '}
-          <strong className="text-neutral-700">Diseños</strong> del editor.
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <TemplateLink
+            templateId="blank"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-neutral-300 bg-white px-6 py-3 text-sm font-semibold text-neutral-900 shadow-sm transition hover:bg-neutral-50"
+          >
+            Ir al editor
+          </TemplateLink>
+        </div>
+        <p className="mt-4 text-center text-sm text-neutral-600">
+          Más gráficos en la pestaña{' '}
+          <strong className="text-neutral-800">Diseños</strong> del editor.
         </p>
       </div>
     </section>
