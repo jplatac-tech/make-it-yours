@@ -3,72 +3,99 @@
 type Props = {
   zoom: number
   onZoomChange: (z: number) => void
-  /** Barra inferior: estilo compacto */
-  compact?: boolean
-  /** Ocupa el ancho disponible (móvil) */
-  fill?: boolean
+  minZoom?: number
+  maxZoom?: number
+  step?: number
+  /** bar = estilo Canva (slider + %); pill = botones ± en cápsula */
+  variant?: 'bar' | 'pill'
+  className?: string
 }
 
 export function MockupZoomControls({
   zoom,
   onZoomChange,
-  compact = false,
-  fill = false,
+  minZoom = 0.5,
+  maxZoom = 1,
+  step = 0.05,
+  variant = 'bar',
+  className = '',
 }: Props) {
   const pct = Math.round(zoom * 100)
+  const minPct = Math.round(minZoom * 100)
+  const maxPct = Math.round(maxZoom * 100)
+  const stepPct = Math.max(1, Math.round(step * 100))
 
-  const shell = compact
-    ? 'flex min-w-0 items-center gap-0.5 rounded-xl border border-neutral-200 bg-neutral-50 px-1 py-0.5 ' +
-      (fill ? 'w-full max-w-none' : 'w-full max-w-[13rem]')
-    : 'flex items-center gap-0.5 rounded-full border border-neutral-200 bg-white px-1 py-0.5 shadow-md'
+  const clamp = (z: number) =>
+    Math.max(minZoom, Math.min(maxZoom, Math.round(z / step) * step))
 
-  const btn = compact
-    ? 'flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-lg font-medium text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200'
-    : 'flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-lg font-medium text-neutral-700 hover:bg-neutral-100'
-
-  const slider = compact
-    ? 'h-1.5 min-w-0 flex-1 cursor-pointer accent-violet-600'
-    : 'h-1 w-16 cursor-pointer accent-violet-600 sm:w-20'
+  if (variant === 'pill') {
+    const btn =
+      'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-lg font-medium text-neutral-700 hover:bg-neutral-100'
+    return (
+      <div
+        className={
+          'flex min-w-0 items-center gap-0.5 rounded-xl border border-neutral-200 bg-neutral-50 px-1 py-0.5 ' +
+          className
+        }
+        role="group"
+        aria-label="Zoom"
+      >
+        <button
+          type="button"
+          aria-label="Alejar"
+          className={btn}
+          onClick={() => onZoomChange(clamp(zoom - step))}
+        >
+          −
+        </button>
+        <input
+          type="range"
+          min={minPct}
+          max={maxPct}
+          step={stepPct}
+          value={pct}
+          onChange={(e) => onZoomChange(clamp(Number(e.target.value) / 100))}
+          onInput={(e) =>
+            onZoomChange(clamp(Number(e.currentTarget.value) / 100))
+          }
+          className="editor-zoom-slider h-1.5 min-h-[28px] min-w-[4rem] flex-1 touch-none"
+          aria-label="Zoom del mockup"
+        />
+        <button
+          type="button"
+          aria-label="Acercar"
+          className={btn}
+          onClick={() => onZoomChange(clamp(zoom + step))}
+        >
+          +
+        </button>
+        <span className="w-9 shrink-0 text-center text-[11px] font-semibold tabular-nums text-neutral-700">
+          {pct}%
+        </span>
+      </div>
+    )
+  }
 
   return (
-    <div className={shell} role="group" aria-label="Zoom">
-      <button
-        type="button"
-        aria-label="Alejar"
-        className={btn}
-        onClick={() =>
-          onZoomChange(Math.max(0.5, Math.round((zoom - 0.1) * 10) / 10))
-        }
-      >
-        −
-      </button>
+    <div
+      className={'flex shrink-0 items-center gap-1.5 ' + className}
+      role="group"
+      aria-label="Zoom"
+    >
       <input
         type="range"
-        min={50}
-        max={100}
-        step={5}
+        min={minPct}
+        max={maxPct}
+        step={stepPct}
         value={pct}
-        onChange={(e) => onZoomChange(Number(e.target.value) / 100)}
-        className={slider}
+        onChange={(e) => onZoomChange(clamp(Number(e.target.value) / 100))}
+        onInput={(e) =>
+          onZoomChange(clamp(Number(e.currentTarget.value) / 100))
+        }
+        className="editor-zoom-slider editor-zoom-slider--compact w-[4.5rem] touch-none sm:w-[5.5rem]"
         aria-label="Zoom del mockup"
       />
-      <button
-        type="button"
-        aria-label="Acercar"
-        className={btn}
-        onClick={() =>
-          onZoomChange(Math.min(1, Math.round((zoom + 0.1) * 10) / 10))
-        }
-      >
-        +
-      </button>
-      <span
-        className={
-          compact
-            ? 'w-9 shrink-0 text-center text-[10px] font-bold tabular-nums text-neutral-700 sm:text-[11px]'
-            : 'min-w-[2.25rem] pr-1 text-center text-[11px] font-bold tabular-nums text-neutral-800'
-        }
-      >
+      <span className="w-[2.25rem] shrink-0 text-xs font-medium tabular-nums text-neutral-600">
         {pct}%
       </span>
     </div>

@@ -15,6 +15,10 @@ export const quoteRequestSchema = z.object({
   comments: z.string().optional(),
   mockupDataUrl: z.string().optional(),
   technicalDataUrl: z.string().optional(),
+  mockupDataUrl_FRONT: z.string().optional(),
+  mockupDataUrl_BACK: z.string().optional(),
+  technicalDataUrl_FRONT: z.string().optional(),
+  technicalDataUrl_BACK: z.string().optional(),
 })
 
 export const quoteDeliverySchema = z.object({

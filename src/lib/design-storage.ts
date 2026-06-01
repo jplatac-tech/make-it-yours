@@ -1,3 +1,5 @@
+import type { ProductSlug } from './products'
+
 export const DESIGN_STORAGE_KEY = 'make-it-yours-design'
 
 export type StoredDesign = {
@@ -9,6 +11,8 @@ export type StoredDesign = {
   }
   productColor?: string
   printZone?: string
+  productSlug?: ProductSlug | string
+  productSize?: string
 }
 
 export function loadDesign(): string | null {
@@ -28,17 +32,22 @@ export function saveDesignPayload(payload: StoredDesign & Record<string, unknown
   saveDesign(JSON.stringify(payload))
 }
 
-export function hasDesignElements(json: string | null): boolean {
-  if (!json) return false
+export function parseStoredDesign(json: string | null): StoredDesign | null {
+  if (!json) return null
   try {
-    const parsed = JSON.parse(json) as StoredDesign
-    if (parsed.shapesByZone) {
-      const front = parsed.shapesByZone.FRONT?.length ?? 0
-      const back = parsed.shapesByZone.BACK?.length ?? 0
-      return front + back > 0
-    }
-    return Array.isArray(parsed.shapes) && parsed.shapes.length > 0
+    return JSON.parse(json) as StoredDesign
   } catch {
-    return false
+    return null
   }
+}
+
+export function hasDesignElements(json: string | null): boolean {
+  const parsed = parseStoredDesign(json)
+  if (!parsed) return false
+  if (parsed.shapesByZone) {
+    const front = parsed.shapesByZone.FRONT?.length ?? 0
+    const back = parsed.shapesByZone.BACK?.length ?? 0
+    return front + back > 0
+  }
+  return Array.isArray(parsed.shapes) && parsed.shapes.length > 0
 }

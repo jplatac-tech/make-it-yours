@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from '../../components/ui/input'
@@ -12,17 +13,19 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [saved, setSaved] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const isAdmin = email
+    const admin = email
       ? await fetch(`/api/admin/check?email=${encodeURIComponent(email)}`)
           .then((res) => res.json())
           .then((data) => data.isAdmin === true)
           .catch(() => false)
       : false
-    saveProfile({ name, email, whatsapp, isAdmin })
+    saveProfile({ name, email, whatsapp, isAdmin: admin })
+    setIsAdmin(admin)
     setSaved(true)
     setTimeout(() => router.push('/'), 700)
   }
@@ -66,6 +69,20 @@ export default function LoginPage() {
           </p>
         ) : null}
       </form>
+      {isAdmin ? (
+        <p className="mt-8 text-sm text-neutral-600">
+          Eres administrador.{' '}
+          <Link href="/admin/login" className="font-semibold text-neutral-900 underline">
+            Entrar al panel
+          </Link>
+        </p>
+      ) : null}
+      <p className="mt-6 text-sm text-neutral-500">
+        ¿No tienes cuenta?{' '}
+        <Link href="/registrarse" className="font-medium underline">
+          Registrarse
+        </Link>
+      </p>
     </main>
   )
 }

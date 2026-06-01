@@ -1,5 +1,6 @@
 import type { DesignShape } from '../types/design'
-import type { PrintZoneValue, ProductColorValue } from './products'
+import type { PrintZoneValue, ProductColorValue, ProductSlug } from './products'
+import { EDITOR_DEFAULT_PRODUCT_SLUG } from './products'
 import { saveDesignPayload } from './design-storage'
 
 const CANVAS = { width: 400, height: 520 }
@@ -17,6 +18,7 @@ export function saveEditorSession(options: {
   shapesByZone: Record<PrintZoneValue, DesignShape[]>
   productColor?: ProductColorValue
   printZone?: PrintZoneValue
+  productSlug?: ProductSlug
 }) {
   saveDesignPayload({
     canvas: CANVAS,
@@ -26,6 +28,7 @@ export function saveEditorSession(options: {
     },
     productColor: options.productColor ?? 'WHITE',
     printZone: options.printZone ?? 'FRONT',
+    productSlug: options.productSlug ?? EDITOR_DEFAULT_PRODUCT_SLUG,
   })
 }
 

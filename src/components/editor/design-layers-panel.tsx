@@ -113,11 +113,27 @@ export function DesignLayersPanel({
                 <div className="flex shrink-0 flex-col gap-0.5">
                   <button
                     type="button"
+                    title="Traer al frente"
+                    aria-label="Traer al frente"
+                    disabled={isFront}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onMoveLayer(shape.id, 'toFront')
+                    }}
+                    className="flex h-7 w-8 cursor-pointer items-center justify-center rounded-lg text-[10px] font-bold text-neutral-600 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    ↑↑
+                  </button>
+                  <button
+                    type="button"
                     title="Traer adelante"
                     aria-label="Traer adelante"
                     disabled={isFront}
-                    onClick={() => onMoveLayer(shape.id, 'forward')}
-                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-neutral-600 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-30"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onMoveLayer(shape.id, 'forward')
+                    }}
+                    className="flex h-7 w-8 cursor-pointer items-center justify-center rounded-lg text-neutral-600 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     <IconLayerUp className="h-4 w-4" />
                   </button>
@@ -126,10 +142,26 @@ export function DesignLayersPanel({
                     title="Enviar atrás"
                     aria-label="Enviar atrás"
                     disabled={isBack}
-                    onClick={() => onMoveLayer(shape.id, 'backward')}
-                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-neutral-600 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-30"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onMoveLayer(shape.id, 'backward')
+                    }}
+                    className="flex h-7 w-8 cursor-pointer items-center justify-center rounded-lg text-neutral-600 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     <IconLayerDown className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    title="Enviar al fondo"
+                    aria-label="Enviar al fondo"
+                    disabled={isBack}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onMoveLayer(shape.id, 'toBack')
+                    }}
+                    className="flex h-7 w-8 cursor-pointer items-center justify-center rounded-lg text-[10px] font-bold text-neutral-600 hover:bg-violet-50 hover:text-violet-700 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    ↓↓
                   </button>
                 </div>
               </div>

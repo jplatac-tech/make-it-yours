@@ -4,27 +4,36 @@ export const PRODUCTS = {
   'camiseta-unisex': {
     slug: 'camiseta-unisex',
     name: 'Camiseta unisex',
-    description: 'Prenda ligera para personalización básica con estampado DTF.',
+    description:
+      'Prenda ligera unisex para volumen y eventos. Estampado DTF con colores vivos y buen detalle.',
     price: 29,
     type: 'TSHIRT' as const,
   },
   'hoodie-unisex': {
     slug: 'hoodie-unisex',
     name: 'Hoodie unisex',
-    description: 'Hoodie clásico para diseños en pecho y espalda.',
+    description:
+      'Hoodie clásico con capucha: ideal para diseños en pecho y espalda. Punto medio en precio y presencia.',
     price: 49,
     type: 'HOODIE' as const,
   },
   'crewneck-unisex': {
     slug: 'crewneck-unisex',
     name: 'Crewneck unisex',
-    description: 'Suéter tipo crewneck para estilo casual y streetwear.',
+    description:
+      'Nivel premium: algodón de mayor gramaje y corte oversize. Más estructura que un hoodie básico — por eso el precio es mayor.',
     price: 55,
     type: 'CREWNECK' as const,
   },
 } as const
 
-export const DEFAULT_PRODUCT_SLUG = 'camiseta-unisex' as const
+export const DTF_EXPLAINER =
+  'DTF (Direct to Film) transfiere tu diseño a la tela con colores intensos y acabado uniforme. Resiste lavados suaves; ideal para logos y gráficos detallados.'
+
+/** Prenda por defecto alineada con el mockup del editor (crewneck) */
+export const DEFAULT_PRODUCT_SLUG = 'crewneck-unisex' as const
+
+export const EDITOR_DEFAULT_PRODUCT_SLUG = DEFAULT_PRODUCT_SLUG
 
 export const PRODUCT_SLUGS = Object.keys(PRODUCTS) as Array<
   keyof typeof PRODUCTS

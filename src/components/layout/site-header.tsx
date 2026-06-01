@@ -11,6 +11,7 @@ const MAIN_NAV = [
   { href: '/#catalogo', label: 'Catálogo' },
   { href: PROBAR_DISENO_PATH, label: 'Probar diseño' },
   { href: EDITOR_PATH, label: 'Ir al editor' },
+  { href: '/ingresar', label: 'Mi cuenta' },
 ] as const
 
 function SearchIcon() {
@@ -51,6 +52,8 @@ function MenuIcon({ open }: { open: boolean }) {
 function isNavActive(pathname: string, href: string) {
   if (href === EDITOR_PATH) return pathname === EDITOR_PATH
   if (href === PROBAR_DISENO_PATH) return pathname === PROBAR_DISENO_PATH
+  if (href === '/ingresar')
+    return pathname === '/ingresar' || pathname === '/registrarse'
   if (href.startsWith('/#')) return pathname === '/'
   return pathname === href
 }

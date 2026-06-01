@@ -1,14 +1,16 @@
 'use client'
 
+import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { useAppState } from '../app-state/app-state-provider'
 import { CrewneckMockup } from './crewneck-mockup'
-import {
-  PRODUCT_SIZES,
-  type ProductSlug,
-} from '../../lib/products'
+import { buildEditorPath } from '../../lib/editor-url'
+import { trackEvent } from '../../lib/analytics'
+import { CATALOG_PRODUCT_META } from '../../lib/product-catalog'
+import { PRODUCT_SIZES, type ProductSlug } from '../../lib/products'
+
 type Product = {
   slug: ProductSlug
   name: string
@@ -28,6 +30,9 @@ export function ProductoDetail({ product }: { product: Product }) {
     () => product.price * quantity,
     [product.price, quantity],
   )
+
+  const editorHref = buildEditorPath({ product: product.slug })
+  const meta = CATALOG_PRODUCT_META[product.slug]
 
   return (
     <div className="mt-8 grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
@@ -50,6 +55,11 @@ export function ProductoDetail({ product }: { product: Product }) {
             {product.name}
           </h1>
           <p className="mt-4 text-neutral-600">{product.description}</p>
+          {meta?.highlight ? (
+            <p className="mt-3 text-sm font-medium text-neutral-500">
+              {meta.highlight}
+            </p>
+          ) : null}
           <p className="mt-6 text-4xl font-bold">{formatPrice(product.price)}</p>
         </div>
 
@@ -91,32 +101,51 @@ export function ProductoDetail({ product }: { product: Product }) {
           </span>
         </p>
 
-        <Button
-          type="button"
-          className="hover:opacity-90"
-          onClick={() =>
-            addToCart(
-              {
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Link
+            href={editorHref}
+            className="btn btn-primary inline-flex min-h-[48px] w-full items-center justify-center"
+          >
+            Personalizar ahora
+          </Link>
+          <Button
+            type="button"
+            variant="secondary"
+            className="min-h-[48px] w-full"
+            onClick={() => {
+              addToCart(
+                {
+                  slug: product.slug,
+                  name: product.name,
+                  price: product.price,
+                  size: selectedSize,
+                },
+                quantity,
+              )
+              trackEvent('add_to_cart', {
                 slug: product.slug,
-                name: product.name,
-                price: product.price,
-                size: selectedSize,
-              },
-              quantity,
-            )
-          }
-        >
-          Añadir al carrito
-        </Button>
+                quantity,
+              })
+            }}
+          >
+            Añadir al carrito (sin diseño)
+          </Button>
+        </div>
+
         <p className="text-sm text-neutral-500">
-          Para personalizar el estampado, usa <strong>Ir al editor</strong> en el
-          menú. Para cotizar, <strong>Cotizar</strong> en la barra superior.
+          <strong>Personalizar</strong> abre el editor con esta prenda.{' '}
+          <strong>Carrito</strong> es para comprar la prenda base; el estampado se
+          cotiza aparte o desde el editor con{' '}
+          <Link href="/comprar" className="font-medium text-sky-700 underline">
+            Guardar pedido
+          </Link>
+          .
         </p>
 
         <ul className="space-y-2 rounded-2xl border border-neutral-200 bg-white p-5 text-sm text-neutral-600">
           <li>Estampado en frente y espalda con medidas máximas en el editor.</li>
-          <li>Editor 2D tipo Canva sobre mockup de suéter.</li>
-          <li>Carrito se envía completo por WhatsApp al comprar.</li>
+          <li>Editor 2D sobre mockup real de crewneck.</li>
+          <li>Carrito → confirmación por WhatsApp con resumen del pedido.</li>
         </ul>
       </section>
     </div>

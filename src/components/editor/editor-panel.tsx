@@ -633,7 +633,7 @@ export function EditorPanel(props: Props) {
   }
 
   return (
-    <aside className="relative z-20 hidden h-full max-h-full min-h-0 shrink-0 flex-row items-stretch overflow-hidden lg:flex lg:max-h-[calc(100dvh-60px)]">
+    <aside className="relative z-20 hidden h-full min-h-0 shrink-0 flex-row items-stretch overflow-hidden lg:flex">
       <EditorSidebarNav activePanel={activePanel} onSelect={setActivePanel} />
       {panelBody}
     </aside>

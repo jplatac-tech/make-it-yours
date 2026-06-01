@@ -1,8 +1,17 @@
-'use server'
-
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { promises as fs } from 'fs'
 import { join } from 'path'
+import {
+  ADMIN_SESSION_COOKIE,
+  verifyAdminSession,
+} from '../../../../lib/admin-auth'
+
+function canMutateProducts(request: NextRequest, secret?: string): boolean {
+  const expected = process.env.ADMIN_CREATION_SECRET
+  if (expected && secret === expected) return true
+  const token = request.cookies.get(ADMIN_SESSION_COOKIE)?.value
+  return verifyAdminSession(token)
+}
 
 async function productsFilePath() {
   return join(process.cwd(), 'data', 'products.json')
@@ -19,12 +28,11 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { product, secret } = body as { product?: any; secret?: string }
-    const expected = process.env.ADMIN_CREATION_SECRET
-    if (!expected || secret !== expected) {
+    if (!canMutateProducts(request, secret)) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
 
@@ -52,12 +60,11 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json()
     const { slug, secret } = body as { slug?: string; secret?: string }
-    const expected = process.env.ADMIN_CREATION_SECRET
-    if (!expected || secret !== expected) {
+    if (!canMutateProducts(request, secret)) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
 

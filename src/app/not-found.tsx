@@ -14,12 +14,9 @@ export default function NotFound() {
           La página que buscas no existe o fue movida.
         </p>
 
-        <div className="mt-6 flex justify-center gap-3">
+        <div className="mt-6 flex justify-center">
           <Link href="/" className="btn btn-primary">
             Ir al inicio
-          </Link>
-          <Link href="/admin/quotes" className="btn btn-secondary">
-            Ver panel
           </Link>
         </div>
       </div>

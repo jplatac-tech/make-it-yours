@@ -146,7 +146,7 @@ export function CanvasElement({
         top: shape.y,
         transform: `rotate(${rotation}deg)`,
         transformOrigin: 'center center',
-        zIndex: getShapeZIndex(shape, isSelected),
+        zIndex: getShapeZIndex(shape),
         opacity: shape.opacity ?? 1,
       }}
       className="touch-none"

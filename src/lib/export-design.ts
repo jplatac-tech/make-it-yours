@@ -1,9 +1,14 @@
 import type { DesignShape } from '../types/design'
 import type { PrintZoneValue, ProductColorValue } from './products'
-import { GARMENT_COLOR_HEX } from './garment-colors'
 import { getPrintZone } from './products'
 import { drawImageWithCrop } from './image-crop'
 import { sortShapesByLayer } from './shape-layers'
+import {
+  getCrewneckMockupSrc,
+  type MockupColorKey,
+  type MockupViewKey,
+} from './mockup-assets'
+import { resolveImageSrc } from './resolve-image-src'
 
 const CANVAS_W = 400
 const CANVAS_H = 520
@@ -32,10 +37,44 @@ export function getShapesForZone(
   if (payload.shapesByZone) {
     return payload.shapesByZone[zone] ?? []
   }
-  return payload.shapes ?? []
+  if (zone === normalizePayloadPrintZone(payload.printZone)) {
+    return payload.shapes ?? []
+  }
+  return []
 }
 
-function getShapeBounds(shape: DesignShape) {
+const ZONE_ORDER: PrintZoneValue[] = ['FRONT', 'BACK']
+
+function normalizePayloadPrintZone(zone: string | undefined): PrintZoneValue {
+  return zone === 'BACK' ? 'BACK' : 'FRONT'
+}
+
+/** Caras del mockup que tienen al menos un elemento de diseño */
+export function getZonesWithDesign(
+  payload: DesignPayload | null,
+): PrintZoneValue[] {
+  if (!payload) return []
+  if (payload.shapesByZone) {
+    return ZONE_ORDER.filter(
+      (zone) => (payload.shapesByZone?.[zone]?.length ?? 0) > 0,
+    )
+  }
+  const legacy = payload.shapes ?? []
+  if (legacy.length === 0) return []
+  return [normalizePayloadPrintZone(payload.printZone)]
+}
+
+function loadHtmlImage(src: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const el = new window.Image()
+    el.crossOrigin = 'anonymous'
+    el.onload = () => resolve(el)
+    el.onerror = () => resolve(null)
+    el.src = src
+  })
+}
+
+export function getShapeBounds(shape: DesignShape) {
   const scale = shape.scale ?? 1
   if (shape.type === 'image') {
     return {
@@ -51,7 +90,54 @@ function getShapeBounds(shape: DesignShape) {
   }
 }
 
-/** Renderiza el mockup 2D completo (prenda + diseño) */
+async function drawShapeOnCtx(
+  ctx: CanvasRenderingContext2D,
+  shape: DesignShape,
+) {
+  const b = getShapeBounds(shape)
+  const scale = shape.scale ?? 1
+  const rotation = ((shape.rotation ?? 0) * Math.PI) / 180
+  const cx = shape.x + b.width / 2
+  const cy = shape.y + b.height / 2
+
+  if (shape.type === 'image' && shape.src) {
+    let src = shape.src
+    try {
+      if (src.startsWith('http')) src = await resolveImageSrc(src)
+    } catch {
+      return
+    }
+    const img = await loadHtmlImage(src)
+    if (!img) return
+    const w = (shape.width ?? 140) * scale
+    const h = (shape.height ?? 140) * scale
+    ctx.save()
+    ctx.translate(cx, cy)
+    ctx.rotate(rotation)
+    if (shape.flipX) {
+      ctx.scale(-1, 1)
+      drawImageWithCrop(ctx, img, shape, -w / 2, -h / 2, w, h)
+    } else {
+      drawImageWithCrop(ctx, img, shape, -w / 2, -h / 2, w, h)
+    }
+    ctx.restore()
+    return
+  }
+
+  ctx.save()
+  ctx.translate(cx, cy)
+  ctx.rotate(rotation)
+  ctx.scale(scale, scale)
+  ctx.font = `${shape.fontSize ?? 28}px ${shape.fontFamily ?? 'Inter'}`
+  ctx.fillStyle = shape.color ?? '#111'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.globalAlpha = shape.opacity ?? 1
+  ctx.fillText(shape.text ?? '', 0, 0)
+  ctx.restore()
+}
+
+/** Renderiza mockup fotográfico + diseño (sin guías del editor) */
 export async function renderMockupDataUrl(
   shapes: DesignShape[],
   productColor: ProductColorValue,
@@ -66,66 +152,22 @@ export async function renderMockupDataUrl(
   if (!ctx) return null
 
   ctx.scale(EXPORT_SCALE, EXPORT_SCALE)
-  const palette = GARMENT_COLOR_HEX[productColor]
-  const zone = getPrintZone(printZone)
-  const area = zone?.printArea
 
-  ctx.fillStyle = '#dfe2e6'
-  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
-
-  ctx.fillStyle = palette.fill
-  ctx.fillRect(72, 172, 256, 280)
-  ctx.strokeStyle = palette.stroke
-  ctx.lineWidth = 1.2
-  ctx.strokeRect(72, 172, 256, 280)
-
-  if (area) {
-    ctx.strokeStyle = '#0ea5e9'
-    ctx.setLineDash([6, 4])
-    ctx.strokeRect(area.x, area.y, area.width, area.height)
-    ctx.setLineDash([])
+  const mockupSrc = getCrewneckMockupSrc(
+    productColor as MockupColorKey,
+    printZone as MockupViewKey,
+  )
+  const photo = await loadHtmlImage(mockupSrc)
+  if (photo) {
+    ctx.drawImage(photo, 0, 0, CANVAS_W, CANVAS_H)
+  } else {
+    ctx.fillStyle = '#e8eaed'
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
   }
 
   const ordered = sortShapesByLayer(shapes)
-
   for (const shape of ordered) {
-    const b = getShapeBounds(shape)
-    const scale = shape.scale ?? 1
-
-    if (shape.type === 'image' && shape.src) {
-      const img = await new Promise<HTMLImageElement | null>((resolve) => {
-        const el = new window.Image()
-        el.onload = () => resolve(el)
-        el.onerror = () => resolve(null)
-        el.src = shape.src!
-      })
-      if (!img) continue
-      const sc = shape.scale ?? 1
-      const w = (shape.width ?? b.width) * sc
-      const h = (shape.height ?? b.height) * sc
-      const x = shape.x
-      const y = shape.y
-      if (shape.flipX) {
-        ctx.save()
-        ctx.translate(x + w, y)
-        ctx.scale(-1, 1)
-        drawImageWithCrop(ctx, img, shape, 0, 0, w, h)
-        ctx.restore()
-      } else {
-        drawImageWithCrop(ctx, img, shape, x, y, w, h)
-      }
-      continue
-    }
-
-    ctx.save()
-    ctx.translate(shape.x + b.width / 2, shape.y + b.height / 2)
-    ctx.scale(scale, scale)
-    ctx.font = `${shape.fontSize ?? 28}px ${shape.fontFamily ?? 'Inter'}`
-    ctx.fillStyle = shape.color ?? '#111'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(shape.text ?? '', 0, 0)
-    ctx.restore()
+    await drawShapeOnCtx(ctx, shape)
   }
 
   return canvas.toDataURL('image/png')
@@ -205,16 +247,41 @@ export async function renderTechnicalDataUrl(
   return canvas.toDataURL('image/png')
 }
 
+export type ZoneExports = {
+  mockupDataUrl: string | null
+  technicalDataUrl: string | null
+}
+
 export async function buildDesignExports(designJson: string) {
   const payload = parseDesignPayload(designJson)
-  if (!payload) return { mockupDataUrl: null, technicalDataUrl: null }
+  if (!payload) {
+    return {
+      zonesWithDesign: [] as PrintZoneValue[],
+      byZone: {} as Partial<Record<PrintZoneValue, ZoneExports>>,
+      mockupDataUrl: null,
+      technicalDataUrl: null,
+    }
+  }
 
-  const zone = (payload.printZone === 'BACK' ? 'BACK' : 'FRONT') as PrintZoneValue
   const color = payload.productColor ?? 'WHITE'
-  const shapes = getShapesForZone(payload, zone)
+  const zonesWithDesign = getZonesWithDesign(payload)
+  const byZone: Partial<Record<PrintZoneValue, ZoneExports>> = {}
 
-  const mockup = (await renderMockupDataUrl(shapes, color, zone)) ?? null
-  const technical = await renderTechnicalDataUrl(shapes, zone)
+  for (const zone of zonesWithDesign) {
+    const shapes = getShapesForZone(payload, zone)
+    byZone[zone] = {
+      mockupDataUrl: (await renderMockupDataUrl(shapes, color, zone)) ?? null,
+      technicalDataUrl: (await renderTechnicalDataUrl(shapes, zone)) ?? null,
+    }
+  }
 
-  return { mockupDataUrl: mockup, technicalDataUrl: technical }
+  const primary = zonesWithDesign[0] ?? 'FRONT'
+  const primaryExports = byZone[primary]
+
+  return {
+    zonesWithDesign,
+    byZone,
+    mockupDataUrl: primaryExports?.mockupDataUrl ?? null,
+    technicalDataUrl: primaryExports?.technicalDataUrl ?? null,
+  }
 }

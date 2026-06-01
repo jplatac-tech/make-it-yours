@@ -6,14 +6,8 @@ import { EDITOR_PATH, PROBAR_DISENO_PATH } from '../../lib/start-editor'
 const HERO_SRC = '/home-hero-1920.webp'
 const HERO_SRC_2X = '/home-hero.webp'
 
-const btnPrimary =
-  'inline-flex min-h-[50px] min-w-[160px] items-center justify-center rounded-full bg-white px-8 text-sm font-bold text-black shadow-[0_4px_28px_rgba(0,0,0,0.45)] transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-100 active:translate-y-0'
-
-const btnOutline =
-  'inline-flex min-h-[50px] min-w-[160px] items-center justify-center rounded-full border-2 border-white bg-black/35 px-8 text-sm font-bold text-white shadow-[0_4px_20px_rgba(0,0,0,0.35)] backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 hover:bg-black/50 active:translate-y-0'
-
-const btnEditor =
-  'inline-flex min-h-[50px] min-w-[160px] items-center justify-center rounded-full border-2 border-white bg-white px-8 text-sm font-bold text-neutral-900 shadow-[0_4px_28px_rgba(0,0,0,0.4)] transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-100 active:translate-y-0'
+const btnBase =
+  'inline-flex min-h-[50px] w-full items-center justify-center rounded-full px-6 text-sm font-bold transition duration-300 hover:-translate-y-0.5 active:translate-y-0 sm:min-w-0 sm:flex-1'
 
 export function HomeHero() {
   return (
@@ -40,7 +34,7 @@ export function HomeHero() {
       <div className="absolute inset-x-0 bottom-0 h-[75%] bg-gradient-to-t from-black/95 via-black/60 to-transparent" />
 
       <div className="absolute inset-0 z-10 flex flex-col justify-end px-5 pb-20 sm:px-8 md:px-14 md:pb-28 lg:px-20 lg:pb-32">
-        <div className="max-w-3xl rounded-2xl border border-white/15 bg-black/80 p-6 shadow-2xl backdrop-blur-md sm:p-8 md:max-w-4xl">
+        <div className="max-w-3xl rounded-2xl border border-white/15 bg-black/80 p-6 shadow-2xl backdrop-blur-md sm:p-8 lg:max-w-4xl">
           <p className="motion-fade-in-up text-xs font-bold tracking-[0.28em] text-white uppercase sm:text-[13px]">
             Crea · Personaliza · Llévalo puesto
           </p>
@@ -48,17 +42,36 @@ export function HomeHero() {
             Si puedes imaginarlo, puedes estamparlo
           </h1>
           <p className="motion-fade-in-up motion-delay-2 mt-4 max-w-xl text-base leading-relaxed text-neutral-100 sm:text-lg">
-            Diseña en el editor, míralo en mockup real y cotiza cuando esté
-            listo.
+            Personaliza en minutos, revisa tu diseño en{' '}
+            <strong className="font-semibold text-white">mockup real</strong> y
+            cotiza sin presión cuando esté listo.
           </p>
-          <div className="motion-fade-in-up motion-delay-3 mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <Link href={EDITOR_PATH} className={btnEditor}>
+          <div className="motion-fade-in-up motion-delay-3 mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Link
+              href={EDITOR_PATH}
+              className={
+                btnBase +
+                ' bg-white text-neutral-900 shadow-[0_4px_28px_rgba(0,0,0,0.45)] hover:bg-neutral-100'
+              }
+            >
               Ir al editor
             </Link>
-            <Link href={PROBAR_DISENO_PATH} className={btnPrimary}>
+            <Link
+              href={PROBAR_DISENO_PATH}
+              className={
+                btnBase +
+                ' bg-white text-neutral-900 shadow-[0_4px_28px_rgba(0,0,0,0.45)] hover:bg-neutral-100'
+              }
+            >
               Probar diseño
             </Link>
-            <Link href="/#catalogo" className={btnOutline}>
+            <Link
+              href="/#catalogo"
+              className={
+                btnBase +
+                ' border-2 border-white bg-transparent text-white shadow-[0_4px_20px_rgba(0,0,0,0.35)] hover:bg-white/10'
+              }
+            >
               Ver catálogo
             </Link>
           </div>

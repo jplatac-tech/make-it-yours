@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useEditorDesktopLayout } from '../../hooks/use-media-query'
 import { EditorMobileDock, type MobileDockTab } from './editor-mobile-dock'
@@ -10,14 +9,22 @@ import { cloneShapesWithNewIds } from '../../lib/start-editor'
 import {
   PRODUCT_COLORS,
   PRINT_ZONES,
+  PRODUCTS,
+  EDITOR_DEFAULT_PRODUCT_SLUG,
   getPrintZone,
   normalizePrintZone,
   type ProductColorValue,
   type PrintZoneValue,
+  type ProductSlug,
 } from '../../lib/products'
 import { defaultElementColor } from '../../lib/garment-colors'
-import { loadDesign, saveDesign } from '../../lib/design-storage'
+import {
+  loadDesign,
+  parseStoredDesign,
+  saveDesign,
+} from '../../lib/design-storage'
 import { CrewneckMockup } from '../product/crewneck-mockup'
+import { MockupDesignLayer } from './mockup-design-layer'
 import { EditorPanel, type EditorPanelId } from './editor-panel'
 import { CanvasElement } from './canvas-element'
 import { MockupEditorChrome } from './mockup-editor-chrome'
@@ -56,10 +63,10 @@ import {
   getCropInsets,
 } from '../../lib/image-crop'
 import {
-  preloadBackgroundRemoval,
   resolveAndPrepareDesignImage,
   removeImageBackground,
 } from '../../lib/remove-background'
+import { EditorSaveIndicator } from './editor-save-indicator'
 
 import { EDITOR_CANVAS_H, EDITOR_CANVAS_W } from '../../lib/editor-canvas'
 
@@ -98,9 +105,24 @@ function centerInPrintArea(zone: PrintZoneValue) {
   }
 }
 
-export function DesignStudio() {
-  const searchParams = useSearchParams()
+type DesignStudioProps = {
+  searchParams: { get: (key: string) => string | null }
+}
+
+function resolveProductSlug(
+  param: string | null,
+  stored?: string | null,
+): ProductSlug {
+  if (param && param in PRODUCTS) return param as ProductSlug
+  if (stored && stored in PRODUCTS) return stored as ProductSlug
+  return EDITOR_DEFAULT_PRODUCT_SLUG
+}
+
+export function DesignStudio({ searchParams }: DesignStudioProps) {
   const loadedFromUrl = useRef(false)
+  const [productSlug, setProductSlug] = useState<ProductSlug>(
+    EDITOR_DEFAULT_PRODUCT_SLUG,
+  )
   const [editorReady, setEditorReady] = useState(false)
   const [shapesByZone, setShapesByZone] =
     useState<Record<PrintZoneValue, DesignShape[]>>(emptyShapesByZone)
@@ -112,13 +134,15 @@ export function DesignStudio() {
   const [mobileTab, setMobileTab] = useState<MobileDockTab>(null)
   const isDesktop = useEditorDesktopLayout()
   const mockupFitRef = useRef<HTMLDivElement | null>(null)
-  const [mockupFitScale, setMockupFitScale] = useState(1)
+  /** Escala para encajar el mockup en el viewport (solo móvil, ResizeObserver) */
+  const [autoFitScale, setAutoFitScale] = useState(1)
+  /** Multiplicador de zoom del usuario en móvil (1 = encaje automático) */
+  const [mobileZoom, setMobileZoom] = useState(1)
   const [uploadsRefresh, setUploadsRefresh] = useState(0)
   const [canvasZoom, setCanvasZoom] = useState(1)
   const [isDragging, setIsDragging] = useState(false)
   const [cropModeId, setCropModeId] = useState<string | null>(null)
   const [imageProcessing, setImageProcessing] = useState<string | null>(null)
-  const mockupBackgroundColor = '#d8dde3'
   const [guideLines, setGuideLines] = useState<GuideLines>({
     vertical: [],
     horizontal: [],
@@ -129,7 +153,8 @@ export function DesignStudio() {
   const canvasZoomRef = useRef(canvasZoom)
   shapesRef.current = shapesByZone
   printZoneRef.current = printZone
-  const effectiveCanvasZoom = isDesktop ? canvasZoom : mockupFitScale
+  const stageScale = isDesktop ? canvasZoom : autoFitScale * mobileZoom
+  const effectiveCanvasZoom = stageScale
   canvasZoomRef.current = effectiveCanvasZoom
   const dragState = useRef<{
     id: string
@@ -216,10 +241,11 @@ export function DesignStudio() {
         shapesByZone: nextByZone,
         productColor: color,
         printZone: zone,
+        productSlug,
       })
       saveDesign(json)
     },
-    [],
+    [productSlug],
   )
 
   useEffect(() => {
@@ -227,11 +253,17 @@ export function DesignStudio() {
     loadedFromUrl.current = true
 
     const tplId = searchParams.get('tpl')
+    const productParam = searchParams.get('product')
     const stored = loadDesign()
+    const parsedStored = parseStoredDesign(stored)
 
-    if (stored) {
+    setProductSlug(
+      resolveProductSlug(productParam, parsedStored?.productSlug ?? null),
+    )
+
+    if (stored && parsedStored) {
       try {
-        const parsed = JSON.parse(stored) as {
+        const parsed = parsedStored as {
           shapes?: DesignShape[]
           shapesByZone?: Record<PrintZoneValue, DesignShape[]>
           productColor?: ProductColorValue
@@ -280,12 +312,8 @@ export function DesignStudio() {
   }, [shapesByZone, printZone, productColor, persist, editorReady])
 
   useEffect(() => {
-    preloadBackgroundRemoval()
-  }, [])
-
-  useEffect(() => {
     if (isDesktop) {
-      setMockupFitScale(1)
+      setAutoFitScale(1)
       return
     }
     const el = mockupFitRef.current
@@ -298,15 +326,13 @@ export function DesignStudio() {
       const scaleW = w / CANVAS_W
       const scaleH = h / CANVAS_H
       const fit = Math.min(scaleW, scaleH)
-      setMockupFitScale(Math.max(0.52, Math.min(fit, 1.2)))
+      setAutoFitScale(Math.max(0.35, Math.min(fit, 1.25)))
     }
     update()
     const ro = new ResizeObserver(update)
     ro.observe(el)
     return () => ro.disconnect()
   }, [isDesktop])
-
-  const stageScale = isDesktop ? canvasZoom : mockupFitScale
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -685,6 +711,7 @@ export function DesignStudio() {
 
   const removeSelected = () => {
     if (!selectedId) return
+    if (!window.confirm('¿Eliminar este elemento del diseño?')) return
     setShapes((s) => renumberShapeLayers(s.filter((sh) => sh.id !== selectedId)))
     setSelectedId(null)
     setCropModeId(null)
@@ -779,12 +806,14 @@ export function DesignStudio() {
       onDuplicate={duplicateSelected}
       onRemove={removeSelected}
       onOpenLayersPanel={openLayersPanel}
+      canvasShapes={shapes}
+      onMoveLayer={moveShapeLayer}
     />
   ) : undefined
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#eef0f4] max-lg:h-[calc(100dvh-52px)] max-lg:max-h-[calc(100dvh-52px)] lg:h-[calc(100dvh-60px)] lg:max-h-[calc(100dvh-60px)] lg:flex-row lg:overflow-hidden">
-      <div className="flex h-full min-h-0 max-h-full shrink-0 overflow-hidden">
+    <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#eef0f4] lg:h-full lg:min-h-0 lg:flex-row">
+      <div className="hidden h-full min-h-0 shrink-0 overflow-hidden lg:flex">
       <EditorPanel
         activePanel={activePanel}
         setActivePanel={setActivePanel}
@@ -822,11 +851,12 @@ export function DesignStudio() {
       />
       </div>
 
-      <section className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:h-full lg:max-h-full">
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#e8ebf0]">
+      <section className="relative z-10 grid h-full min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden">
+        <div className="relative min-h-0 overflow-hidden bg-[#e8ebf0]">
+          <EditorSaveIndicator />
           <div
             ref={mockupFitRef}
-            className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden px-2 py-2 max-lg:min-h-0 lg:px-6 lg:py-4"
+            className="relative flex h-full min-h-0 items-center justify-center overflow-hidden px-2 py-2 max-lg:items-end max-lg:justify-center max-lg:pb-1 max-lg:pt-2 lg:px-6 lg:py-4"
           >
             <MockupEditorChrome propertiesToolbar={propertiesToolbar} />
               {imageProcessing ? (
@@ -862,7 +892,7 @@ export function DesignStudio() {
                 <div
                   ref={canvasRef}
                   className={
-                    'overflow-visible rounded-xl ' +
+                    'isolate overflow-visible rounded-xl bg-transparent ' +
                     (isDesktop
                       ? 'absolute left-1/2 top-1/2 origin-center'
                       : 'absolute left-0 top-0 origin-top-left')
@@ -875,14 +905,12 @@ export function DesignStudio() {
                           marginLeft: -CANVAS_W / 2,
                           marginTop: -CANVAS_H / 2,
                           transform: `scale(${canvasZoom})`,
-                          backgroundColor: mockupBackgroundColor,
                         }
                       : {
                           width: CANVAS_W,
                           height: CANVAS_H,
                           transform: `scale(${stageScale})`,
                           transformOrigin: 'top left',
-                          backgroundColor: mockupBackgroundColor,
                         }
                   }
                   onPointerDown={(e) => {
@@ -921,6 +949,7 @@ export function DesignStudio() {
                   </div>
                 ) : null}
 
+                <MockupDesignLayer productColor={productColor}>
                 {sortedShapes.map((shape) => {
                   const isSelected = shape.id === selectedId
                   const isEditing = shape.id === editingTextId
@@ -997,20 +1026,25 @@ export function DesignStudio() {
                     />
                   )
                 })}
+                </MockupDesignLayer>
                 </div>
               </div>
           </div>
-
-          <MockupWorkspaceToolbar
-            printZone={printZone}
-            productColor={productColor}
-            onPrintZoneChange={setPrintZone}
-            canvasZoom={canvasZoom}
-            onCanvasZoomChange={setCanvasZoom}
-          />
         </div>
 
-        <EditorMobileDock
+        <div className="shrink-0">
+          <MockupWorkspaceToolbar
+            printZone={printZone}
+            onPrintZoneChange={setPrintZone}
+            canvasZoom={isDesktop ? canvasZoom : mobileZoom}
+            onCanvasZoomChange={isDesktop ? setCanvasZoom : setMobileZoom}
+            onFitZoom={() =>
+              isDesktop ? setCanvasZoom(1) : setMobileZoom(1)
+            }
+            minZoom={0.5}
+            maxZoom={isDesktop ? 1 : 1.5}
+          />
+          <EditorMobileDock
             mobileTab={mobileTab}
             setMobileTab={setMobileTab}
             activePanel={activePanel}
@@ -1047,6 +1081,7 @@ export function DesignStudio() {
                 : undefined
             }
           />
+        </div>
       </section>
     </div>
   )

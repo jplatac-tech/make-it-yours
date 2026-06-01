@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
+import { trackEvent } from '../../lib/analytics'
 import { submitQuoteDelivery } from '../../server/actions/quote-actions'
 
 type Props = {
@@ -24,6 +25,7 @@ export function QuoteDeliveryForm({ quoteId }: Props) {
     const result = await submitQuoteDelivery(formData)
 
     if (result.success) {
+      trackEvent('quote_delivery_saved', { quoteId })
       router.push('/pedido/exito')
     } else {
       setMessage(result.message)

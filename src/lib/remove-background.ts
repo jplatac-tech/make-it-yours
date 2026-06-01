@@ -34,7 +34,9 @@ async function runRemoval(imageSrc: string): Promise<string> {
 /** Precarga el modelo en segundo plano (editor / probar diseño) */
 export function preloadBackgroundRemoval(): void {
   if (typeof window === 'undefined') return
-  void import('@imgly/background-removal')
+  void import('@imgly/background-removal').catch(() => {
+    /* WASM/modelo no disponible en algunos móviles — el editor sigue funcionando */
+  })
 }
 
 /**

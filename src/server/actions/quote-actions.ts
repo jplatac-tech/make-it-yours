@@ -6,7 +6,8 @@ import {
   quoteRequestSchema,
 } from '../../lib/validations/quote'
 import { normalizeQuoteInput } from '../../lib/services/quote-mapper'
-import { PRODUCTS, getPrintZone } from '../../lib/products'
+import { getZonesWithDesign, parseDesignPayload } from '../../lib/export-design'
+import { PRODUCTS, getPrintZone, type PrintZoneValue } from '../../lib/products'
 
 function generateRequestNumber() {
   return `Q-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${Math.floor(
@@ -28,6 +29,10 @@ export async function submitQuoteRequest(formData: FormData) {
     comments: formData.get('comments'),
     mockupDataUrl: formData.get('mockupDataUrl'),
     technicalDataUrl: formData.get('technicalDataUrl'),
+    mockupDataUrl_FRONT: formData.get('mockupDataUrl_FRONT'),
+    mockupDataUrl_BACK: formData.get('mockupDataUrl_BACK'),
+    technicalDataUrl_FRONT: formData.get('technicalDataUrl_FRONT'),
+    technicalDataUrl_BACK: formData.get('technicalDataUrl_BACK'),
   })
 
   if (!parsed.success) {
@@ -38,8 +43,12 @@ export async function submitQuoteRequest(formData: FormData) {
   }
 
   const payload = normalizeQuoteInput(parsed.data)
+  const designPayload = parseDesignPayload(parsed.data.designJson)
+  const zonesWithDesign = getZonesWithDesign(designPayload)
   const productData = PRODUCTS[payload.productSlug]
-  const zone = getPrintZone(payload.printZone)
+  const zone = getPrintZone(
+    zonesWithDesign[0] ?? payload.printZone,
+  )
 
   if (!productData || !zone) {
     return {
@@ -80,16 +89,18 @@ export async function submitQuoteRequest(formData: FormData) {
     update: {},
   })
 
+  const printZoneValue = zonesWithDesign[0] ?? payload.printZone
+
   const printZone = await prisma.productPrintZone.upsert({
     where: {
       productId_zone: {
         productId: product.id,
-        zone: payload.printZone,
+        zone: printZoneValue,
       },
     },
     create: {
       productId: product.id,
-      zone: payload.printZone,
+      zone: printZoneValue,
       label: zone.label,
       maxWidthIn: zone.widthIn,
       maxHeightIn: zone.heightIn,
@@ -101,6 +112,61 @@ export async function submitQuoteRequest(formData: FormData) {
       maxHeightIn: zone.heightIn,
     },
   })
+
+  const assetCreates: {
+    kind: 'TECHNICAL_FILE' | 'MOCKUP_PREVIEW'
+    url: string
+    mimeType: string
+    originalName: string
+  }[] = []
+
+  const zonesToExport: PrintZoneValue[] =
+    zonesWithDesign.length > 0 ? zonesWithDesign : [payload.printZone]
+
+  for (const zoneKey of zonesToExport) {
+    const mockupUrl =
+      payload.mockupsByZone[zoneKey] ?? payload.mockupDataUrl ?? null
+    const technicalUrl =
+      payload.technicalsByZone[zoneKey] ?? payload.technicalDataUrl ?? null
+
+    if (mockupUrl) {
+      assetCreates.push({
+        kind: 'MOCKUP_PREVIEW',
+        url: mockupUrl.startsWith('data:')
+          ? mockupUrl
+          : mockupUrl,
+        mimeType: 'image/png',
+        originalName: `mockup-${zoneKey}`,
+      })
+    }
+    if (technicalUrl) {
+      assetCreates.push({
+        kind: 'TECHNICAL_FILE',
+        url: technicalUrl.startsWith('data:')
+          ? technicalUrl
+          : technicalUrl,
+        mimeType: 'image/png',
+        originalName: `technical-${zoneKey}`,
+      })
+    }
+  }
+
+  if (assetCreates.length === 0) {
+    assetCreates.push(
+      {
+        kind: 'TECHNICAL_FILE',
+        url: 'internal://technical-file',
+        mimeType: 'image/png',
+        originalName: 'technical',
+      },
+      {
+        kind: 'MOCKUP_PREVIEW',
+        url: 'internal://mockup-preview',
+        mimeType: 'image/png',
+        originalName: 'mockup',
+      },
+    )
+  }
 
   const quote = await prisma.quoteRequest.create({
     data: {
@@ -117,22 +183,7 @@ export async function submitQuoteRequest(formData: FormData) {
           designJson: payload.designJson,
           notes: payload.comments,
           assets: {
-            create: [
-              {
-                kind: 'TECHNICAL_FILE',
-                url: payload.technicalDataUrl?.startsWith('data:')
-                  ? 'inline://technical-file'
-                  : payload.technicalDataUrl ?? 'internal://technical-file',
-                mimeType: 'image/png',
-              },
-              {
-                kind: 'MOCKUP_PREVIEW',
-                url: payload.mockupDataUrl?.startsWith('data:')
-                  ? 'inline://mockup-preview'
-                  : payload.mockupDataUrl ?? 'internal://mockup-preview',
-                mimeType: 'image/png',
-              },
-            ],
+            create: assetCreates,
           },
         },
       },

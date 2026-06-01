@@ -45,9 +45,7 @@ export default async function ComprarEntregaPage({
         </div>
 
         <p className="mt-6 text-center text-sm text-neutral-500">
-          <Link href="/pedido/exito" className="underline">
-            Omitir por ahora
-          </Link>
+          El WhatsApp es obligatorio para coordinar entrega y cotización final.
         </p>
       </div>
     </main>

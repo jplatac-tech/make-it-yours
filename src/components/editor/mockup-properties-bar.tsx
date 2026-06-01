@@ -5,6 +5,10 @@ import {
   EDITOR_FONTS,
   getDefaultFontFamily,
 } from '../../lib/editor-fonts'
+import {
+  getShapeLayerIndex,
+  type LayerMove,
+} from '../../lib/shape-layers'
 import type { DesignShape } from '../../types/design'
 import { PRINT_SWATCHES } from './editor-ui'
 import { ToolbarFloatingPopover } from './toolbar-floating-popover'
@@ -15,6 +19,7 @@ import {
   IconDuplicate,
   IconEditText,
   IconFlip,
+  IconLayerDown,
   IconLayerUp,
   IconOpacity,
   IconTextColor,
@@ -109,6 +114,8 @@ type Props = {
   onDuplicate?: () => void
   onRemove?: () => void
   onOpenLayersPanel?: () => void
+  canvasShapes?: DesignShape[]
+  onMoveLayer?: (id: string, move: LayerMove) => void
 }
 
 export function MockupPropertiesBar({
@@ -123,6 +130,8 @@ export function MockupPropertiesBar({
   onDuplicate,
   onRemove,
   onOpenLayersPanel,
+  canvasShapes = [],
+  onMoveLayer,
 }: Props) {
   const [fontOpen, setFontOpen] = useState(false)
   const [colorOpen, setColorOpen] = useState(false)
@@ -135,6 +144,9 @@ export function MockupPropertiesBar({
 
   const patch = (p: Partial<DesignShape>) => updateShape(shape.id, p)
   void printZone
+
+  const layerPos = getShapeLayerIndex(canvasShapes, shape.id)
+  const canReorder = canvasShapes.length > 1 && !!onMoveLayer
 
   const closeAll = () => {
     setFontOpen(false)
@@ -490,6 +502,34 @@ export function MockupPropertiesBar({
         </>
       ) : null}
 
+      {canReorder ? (
+        <>
+          <ToolbarDivider />
+          <IconToolBtn
+            title="Traer adelante"
+            disabled={layerPos.isFront}
+            onClick={() => {
+              interact()
+              closeAll()
+              onMoveLayer!(shape.id, 'forward')
+            }}
+          >
+            <IconLayerUp className="h-4 w-4" />
+          </IconToolBtn>
+          <IconToolBtn
+            title="Enviar atrás"
+            disabled={layerPos.isBack}
+            onClick={() => {
+              interact()
+              closeAll()
+              onMoveLayer!(shape.id, 'backward')
+            }}
+          >
+            <IconLayerDown className="h-4 w-4" />
+          </IconToolBtn>
+        </>
+      ) : null}
+
       {onOpenLayersPanel ? (
         <>
           <ToolbarDivider />
@@ -501,7 +541,7 @@ export function MockupPropertiesBar({
               onOpenLayersPanel()
             }}
           >
-            <IconLayerUp />
+            <IconLayerUp className="h-4 w-4" />
           </IconToolBtn>
         </>
       ) : null}

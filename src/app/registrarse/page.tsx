@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from '../../components/ui/input'
@@ -64,6 +65,12 @@ export default function RegisterPage() {
           <p className="text-sm text-sky-700">Cuenta creada. Redirigiendo...</p>
         ) : null}
       </form>
+      <p className="mt-6 text-sm text-neutral-500">
+        ¿Ya tienes datos guardados?{' '}
+        <Link href="/ingresar" className="font-medium underline">
+          Ingresar
+        </Link>
+      </p>
     </main>
   )
 }

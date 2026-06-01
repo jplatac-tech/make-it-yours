@@ -5,13 +5,19 @@ import { useRouter } from 'next/navigation'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
+import { trackEvent } from '../../lib/analytics'
+import { buildEditorPath } from '../../lib/editor-url'
 import { submitQuoteRequest } from '../../server/actions/quote-actions'
-import { buildDesignExports } from '../../lib/export-design'
+import {
+  buildDesignExports,
+  getZonesWithDesign,
+  parseDesignPayload,
+} from '../../lib/export-design'
 import {
   DEFAULT_PRODUCT_SIZE,
-  PRODUCT_COLORS,
+  getPrintZone,
+  getProductColorLabel,
   PRODUCT_SIZES,
-  PRINT_ZONES,
   normalizePrintZone,
   type ProductColorValue,
   type ProductSizeValue,
@@ -29,35 +35,33 @@ export function PurchaseForm({
   productName,
   designJson,
 }: Props) {
-  const stored = useMemo(() => {
-    try {
-      return JSON.parse(designJson) as {
-        productColor?: ProductColorValue
-        printZone?: PrintZoneValue
-        productSize?: ProductSizeValue
-      }
-    } catch {
-      return {}
-    }
-  }, [designJson])
+  const design = useMemo(() => parseDesignPayload(designJson), [designJson])
 
-  const [productColor, setProductColor] = useState<ProductColorValue>(
-    stored.productColor ?? PRODUCT_COLORS[0]?.value ?? 'BLACK',
+  const productColor = (design?.productColor ??
+    'WHITE') as ProductColorValue
+  const zonesWithDesign = useMemo(
+    () => getZonesWithDesign(design),
+    [design],
   )
+  const primaryPrintZone: PrintZoneValue =
+    zonesWithDesign[0] ?? normalizePrintZone(design?.printZone)
+
   const [productSize, setProductSize] = useState<ProductSizeValue>(
-    stored.productSize ?? DEFAULT_PRODUCT_SIZE,
-  )
-  const [printZone, setPrintZone] = useState<PrintZoneValue>(
-    normalizePrintZone(stored.printZone) ?? PRINT_ZONES[0]?.value ?? 'FRONT',
+    (design as { productSize?: ProductSizeValue })?.productSize ??
+      DEFAULT_PRODUCT_SIZE,
   )
   const [pending, setPending] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const router = useRouter()
 
-  const activeZone = useMemo(
-    () => PRINT_ZONES.find((zone) => zone.value === printZone) ?? PRINT_ZONES[0],
-    [printZone],
+  const primaryZoneMeta = useMemo(
+    () => getPrintZone(primaryPrintZone) ?? getPrintZone('FRONT')!,
+    [primaryPrintZone],
   )
+
+  const zoneSummary = zonesWithDesign
+    .map((z) => getPrintZone(z)?.label ?? z)
+    .join(' y ')
 
   async function handleSubmit(formData: FormData) {
     setPending(true)
@@ -67,10 +71,19 @@ export function PurchaseForm({
     formData.set('productName', productName)
     formData.set('productColor', productColor)
     formData.set('productSize', productSize)
-    formData.set('printZone', printZone)
+    formData.set('printZone', primaryPrintZone)
     formData.set('designJson', designJson)
-    formData.set('finalWidthIn', String(activeZone.widthIn))
-    formData.set('finalHeightIn', String(activeZone.heightIn))
+    formData.set('finalWidthIn', String(primaryZoneMeta.widthIn))
+    formData.set('finalHeightIn', String(primaryZoneMeta.heightIn))
+
+    if (zonesWithDesign.length > 1) {
+      const extra = `Zonas con diseño: ${zoneSummary}`
+      const existing = String(formData.get('comments') ?? '').trim()
+      formData.set(
+        'comments',
+        existing ? `${existing}\n${extra}` : extra,
+      )
+    }
 
     try {
       const exports = await buildDesignExports(designJson)
@@ -80,6 +93,18 @@ export function PurchaseForm({
       if (exports.technicalDataUrl) {
         formData.set('technicalDataUrl', exports.technicalDataUrl)
       }
+      for (const zone of exports.zonesWithDesign) {
+        const zoneExport = exports.byZone[zone]
+        if (zoneExport?.mockupDataUrl) {
+          formData.set(`mockupDataUrl_${zone}`, zoneExport.mockupDataUrl)
+        }
+        if (zoneExport?.technicalDataUrl) {
+          formData.set(
+            `technicalDataUrl_${zone}`,
+            zoneExport.technicalDataUrl,
+          )
+        }
+      }
     } catch {
       /* continúa sin export si falla en cliente */
     }
@@ -87,6 +112,7 @@ export function PurchaseForm({
     const result = await submitQuoteRequest(formData)
 
     if (result.success && result.quoteId) {
+      trackEvent('quote_submitted', { productSlug, quoteId: result.quoteId })
       router.push(`/comprar/entrega?quoteId=${result.quoteId}`)
     } else {
       setMessage(result.message)
@@ -97,57 +123,47 @@ export function PurchaseForm({
 
   return (
     <form action={handleSubmit} className="space-y-5">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block text-sm font-medium text-neutral-900">
-          Color de prenda
-          <select
-            name="productColor"
-            value={productColor}
-            onChange={(event) =>
-              setProductColor(event.target.value as ProductColorValue)
-            }
-            className="mt-2 w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none"
+      <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
+        <p className="font-medium text-neutral-900">Del editor</p>
+        <ul className="mt-2 space-y-1">
+          <li>
+            Color: <span className="text-neutral-900">{getProductColorLabel(productColor)}</span>
+          </li>
+          {zonesWithDesign.length > 0 ? (
+            <li>
+              {zonesWithDesign.length > 1 ? 'Zonas' : 'Zona'}:{' '}
+              <span className="text-neutral-900">{zoneSummary}</span>
+            </li>
+          ) : null}
+        </ul>
+        <p className="mt-2 text-xs text-neutral-500">
+          Para cambiar color o diseño,{' '}
+          <a
+            href={buildEditorPath({ product: productSlug })}
+            className="font-medium text-sky-700 underline"
           >
-            {PRODUCT_COLORS.map((color) => (
-              <option key={color.value} value={color.value}>
-                {color.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="block text-sm font-medium text-neutral-900">
-          Talla
-          <select
-            name="productSize"
-            value={productSize}
-            onChange={(event) =>
-              setProductSize(event.target.value as ProductSizeValue)
-            }
-            className="mt-2 w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none"
-          >
-            {PRODUCT_SIZES.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
-        </label>
+            vuelve al editor
+          </a>
+          .
+        </p>
       </div>
 
+      <input type="hidden" name="productColor" value={productColor} />
+      <input type="hidden" name="printZone" value={primaryPrintZone} />
+
       <label className="block text-sm font-medium text-neutral-900">
-        Zona de impresión
+        Talla
         <select
-          name="printZone"
-          value={printZone}
+          name="productSize"
+          value={productSize}
           onChange={(event) =>
-            setPrintZone(event.target.value as PrintZoneValue)
+            setProductSize(event.target.value as ProductSizeValue)
           }
           className="mt-2 w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none"
         >
-          {PRINT_ZONES.map((zone) => (
-            <option key={zone.value} value={zone.value}>
-              {zone.label}
+          {PRODUCT_SIZES.map((size) => (
+            <option key={size} value={size}>
+              {size}
             </option>
           ))}
         </select>
@@ -166,8 +182,8 @@ export function PurchaseForm({
       />
 
       <p className="text-xs text-neutral-500">
-        Al enviar se generan el mockup y el archivo técnico para revisión
-        comercial. Los datos de contacto se completan en el siguiente paso.
+        Al enviar se generan mockups y archivos técnicos de cada cara con
+        diseño. Los datos de contacto se completan en el siguiente paso.
       </p>
 
       <Button type="submit" className="w-full" disabled={pending}>

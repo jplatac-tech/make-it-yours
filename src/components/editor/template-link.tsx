@@ -3,7 +3,9 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { getTemplateById } from '../../lib/design-templates'
-import { EDITOR_PATH, saveEditorSession } from '../../lib/start-editor'
+import { buildEditorPath } from '../../lib/editor-url'
+import { EDITOR_DEFAULT_PRODUCT_SLUG } from '../../lib/products'
+import { saveEditorSession } from '../../lib/start-editor'
 
 type Props = {
   templateId: string
@@ -12,7 +14,7 @@ type Props = {
 }
 
 export function TemplateLink({ templateId, className, children }: Props) {
-  const href = `${EDITOR_PATH}?tpl=${templateId}`
+  const href = buildEditorPath({ tpl: templateId })
 
   return (
     <Link
@@ -24,6 +26,7 @@ export function TemplateLink({ templateId, className, children }: Props) {
         saveEditorSession({
           shapesByZone: tpl.shapesByZone,
           productColor: tpl.productColor,
+          productSlug: EDITOR_DEFAULT_PRODUCT_SLUG,
         })
       }}
     >

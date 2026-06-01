@@ -1,13 +1,22 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { DesignOrderPreview } from '../../components/comprar/design-order-preview'
 import { PurchaseForm } from '../../components/forms/purchase-form'
-import { DEFAULT_PRODUCT_SLUG, PRODUCTS } from '../../lib/products'
-import { hasDesignElements, loadDesign } from '../../lib/design-storage'
+import {
+  DEFAULT_PRODUCT_SLUG,
+  PRODUCTS,
+  type ProductSlug,
+} from '../../lib/products'
+import {
+  hasDesignElements,
+  loadDesign,
+  parseStoredDesign,
+} from '../../lib/design-storage'
+import { buildEditorPath } from '../../lib/editor-url'
 
 export default function ComprarPage() {
-  const product = PRODUCTS[DEFAULT_PRODUCT_SLUG]
   const [designJson, setDesignJson] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
 
@@ -15,6 +24,12 @@ export default function ComprarPage() {
     setDesignJson(loadDesign())
     setReady(true)
   }, [])
+
+  const product = useMemo(() => {
+    const parsed = parseStoredDesign(designJson)
+    const slug = (parsed?.productSlug as ProductSlug | undefined) ?? DEFAULT_PRODUCT_SLUG
+    return PRODUCTS[slug in PRODUCTS ? slug : DEFAULT_PRODUCT_SLUG]
+  }, [designJson])
 
   if (!ready) {
     return (
@@ -35,7 +50,10 @@ export default function ComprarPage() {
             Crea tu diseño en el editor y luego vuelve aquí para confirmar tu
             pedido.
           </p>
-          <Link href="/disenar/editor" className="btn btn-primary mt-8 inline-flex">
+          <Link
+            href={buildEditorPath()}
+            className="btn btn-primary mt-8 inline-flex"
+          >
             Ir al editor
           </Link>
         </div>
@@ -45,22 +63,31 @@ export default function ComprarPage() {
 
   return (
     <main className="container py-12 lg:py-16">
-      <div className="mx-auto max-w-xl">
+      <div className="mx-auto max-w-2xl">
         <p className="text-sm font-medium tracking-[0.2em] text-neutral-500 uppercase">
-          Pedido
+          Pedido con diseño
         </p>
         <h1 className="mt-3 text-3xl font-semibold text-neutral-950">
           Enviar diseño para cotizar
         </h1>
         <p className="mt-3 text-neutral-600">
-          Revisa talla, color y zona de tu {product.name.toLowerCase()}. Puedes{' '}
-          <Link href="/disenar/editor" className="font-medium text-sky-700 underline">
+          El color y las caras con diseño vienen del editor. Aquí solo indicas
+          talla y cantidad. Puedes{' '}
+          <Link
+            href={buildEditorPath({ product: product.slug })}
+            className="font-medium text-sky-700 underline"
+          >
             volver al editor
           </Link>{' '}
-          si quieres cambiar el diseño.
+          para ajustar el diseño.
         </p>
 
-        <div className="card mt-8 p-6">
+        <DesignOrderPreview
+          designJson={designJson}
+          productName={product.name}
+        />
+
+        <div className="card p-6">
           <PurchaseForm
             productSlug={product.slug}
             productName={product.name}

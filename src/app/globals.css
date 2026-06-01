@@ -198,3 +198,88 @@ img {
     transform: none;
   }
 }
+
+/* Editor: ocupa exactamente el hueco bajo el header, sin scroll ni hueco blanco */
+html:has(.editor-shell-height) {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+html:has(.editor-shell-height) body {
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+main:has(.editor-shell-height) {
+  display: flex;
+  flex: 1 1 0%;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-shell-height {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Slider de zoom del editor (estilo Canva) */
+.editor-zoom-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 9999px;
+  background: #c4c8d0;
+}
+
+.editor-zoom-slider--compact {
+  height: 2px;
+}
+
+.editor-zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #9ca3af;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+.editor-zoom-slider--compact::-webkit-slider-thumb {
+  width: 10px;
+  height: 10px;
+}
+
+.editor-zoom-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #9ca3af;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+.editor-zoom-slider--compact::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+}
+
+.editor-zoom-slider::-moz-range-track {
+  height: 3px;
+  border-radius: 9999px;
+  background: #c4c8d0;
+}
+
+.editor-zoom-slider--compact::-moz-range-track {
+  height: 2px;
+}

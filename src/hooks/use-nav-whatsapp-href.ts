@@ -9,7 +9,8 @@ import {
   hasDesignElements,
   loadDesign,
 } from '../lib/design-storage'
-import { PRODUCTS } from '../lib/products'
+import { PRODUCTS, type ProductSlug } from '../lib/products'
+import { parseStoredDesign } from '../lib/design-storage'
 import {
   buildWhatsAppUrl,
   formatCartWhatsAppMessage,
@@ -30,10 +31,11 @@ export function useNavWhatsAppHref(): NavWhatsAppAction {
   const isEditor =
     pathname === '/disenar' || pathname.startsWith('/disenar/')
   const isCart = pathname === '/carrito'
+  const needsDesign = isEditor || isCart
   const [designJson, setDesignJson] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isEditor) return
+    if (!needsDesign) return
     const read = () => setDesignJson(loadDesign())
     read()
     const onSave = () => read()
@@ -46,7 +48,7 @@ export function useNavWhatsAppHref(): NavWhatsAppAction {
       window.removeEventListener(DESIGN_SAVE_EVENT, onSave)
       window.removeEventListener('storage', onStorage)
     }
-  }, [isEditor])
+  }, [needsDesign])
 
   return useMemo(() => {
     if (isCart) {
@@ -58,22 +60,25 @@ export function useNavWhatsAppHref(): NavWhatsAppAction {
                 cartItems,
                 totalPrice,
                 profile?.name,
+                designJson,
               ),
             )
           : '#',
-        label: 'Enviar carrito por WhatsApp',
-        shortLabel: 'Enviar',
+        label: 'Confirmar por WhatsApp',
+        shortLabel: 'WhatsApp',
         enabled,
       }
     }
 
     if (isEditor && hasDesignElements(designJson)) {
+      const slug = parseStoredDesign(designJson)?.productSlug as
+        | ProductSlug
+        | undefined
+      const productName =
+        slug && slug in PRODUCTS ? PRODUCTS[slug].name : undefined
       return {
         href: buildWhatsAppUrl(
-          formatDesignQuoteMessage(
-            designJson,
-            'Suéter / crewneck personalizado',
-          ),
+          formatDesignQuoteMessage(designJson, productName),
         ),
         label: 'Cotizar por WhatsApp',
         shortLabel: 'Cotizar',
@@ -104,6 +109,7 @@ export function useNavWhatsAppHref(): NavWhatsAppAction {
     }
   }, [
     isCart,
+    needsDesign,
     isEditor,
     designJson,
     cartItems,

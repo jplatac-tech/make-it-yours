@@ -1,10 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useAppState } from '../../../components/app-state/app-state-provider'
-
 export default function AdminProductsPage() {
-  const { profile } = useAppState()
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [secret, setSecret] = useState('')
@@ -22,31 +19,6 @@ export default function AdminProductsPage() {
       .then(setProducts)
       .catch(() => setProducts([]))
   }, [])
-
-  if (!profile?.isAdmin) {
-    return (
-      <main className="container py-16">
-        <h1 className="text-2xl font-semibold">Admin productos</h1>
-        <p className="mt-4 text-neutral-600">
-          Acceso restringido. Debes ser admin.
-        </p>
-        <div className="mt-4 max-w-md">
-          <label className="block text-sm font-medium text-neutral-900">
-            Admin secret
-          </label>
-          <input
-            value={secret}
-            onChange={(e) => setSecret(e.target.value)}
-            className="mt-2 w-full rounded-2xl border px-3 py-2"
-          />
-          <p className="mt-2 text-sm text-neutral-500">
-            Si eres el propietario introduce el secreto para usar las
-            operaciones.
-          </p>
-        </div>
-      </main>
-    )
-  }
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
@@ -77,7 +49,9 @@ export default function AdminProductsPage() {
     <main className="container py-16">
       <h1 className="text-2xl font-semibold">Admin productos</h1>
       <p className="mt-2 text-sm text-neutral-500">
-        Lista de productos persistentes.
+        Lista en <code className="text-xs">data/products.json</code>. Para crear o
+        eliminar, usa <code className="text-xs">ADMIN_CREATION_SECRET</code> en el
+        campo secreto.
       </p>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">

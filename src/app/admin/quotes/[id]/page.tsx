@@ -95,12 +95,16 @@ export default async function AdminQuoteDetailPage({
   }
 
   const item = quote.items[0]
-  const mockupAsset = item?.assets.find(
-    (asset) => asset.kind === 'MOCKUP_PREVIEW',
-  )
-  const technicalAsset = item?.assets.find(
-    (asset) => asset.kind === 'TECHNICAL_FILE',
-  )
+  const mockupAssets =
+    item?.assets.filter((asset) => asset.kind === 'MOCKUP_PREVIEW') ?? []
+  const technicalAssets =
+    item?.assets.filter((asset) => asset.kind === 'TECHNICAL_FILE') ?? []
+
+  function assetZoneLabel(originalName: string | null | undefined) {
+    if (originalName?.includes('FRONT')) return 'Frente'
+    if (originalName?.includes('BACK')) return 'Espalda'
+    return 'Vista'
+  }
   const designJsonString = item
     ? JSON.stringify(item.designJson, null, 2)
     : '{}'
@@ -135,42 +139,59 @@ export default async function AdminQuoteDetailPage({
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.95fr]">
         <section className="space-y-6">
           <div className="card p-6">
-            <h2 className="text-lg font-semibold text-neutral-900">Mockup</h2>
-            {mockupAsset && mockupAsset.url?.startsWith('data:') ? (
-              <img
-                src={mockupAsset.url}
-                alt="Mockup"
-                className="mt-4 w-full rounded-3xl border border-neutral-200 object-contain"
-              />
+            <h2 className="text-lg font-semibold text-neutral-900">Mockups</h2>
+            {mockupAssets.length > 0 ? (
+              <div
+                className={
+                  'mt-4 grid gap-4 ' +
+                  (mockupAssets.length > 1 ? 'sm:grid-cols-2' : 'grid-cols-1')
+                }
+              >
+                {mockupAssets.map((mockupAsset) =>
+                  mockupAsset.url?.startsWith('data:') ||
+                  mockupAsset.url?.startsWith('http') ? (
+                    <div key={mockupAsset.id}>
+                      <p className="mb-2 text-sm font-medium text-neutral-600">
+                        {assetZoneLabel(mockupAsset.originalName)}
+                      </p>
+                      <img
+                        src={mockupAsset.url}
+                        alt={assetZoneLabel(mockupAsset.originalName)}
+                        className="w-full rounded-3xl border border-neutral-200 object-contain"
+                      />
+                      <a
+                        href={mockupAsset.url}
+                        download={`mockup-${quote.requestNumber}-${mockupAsset.originalName ?? 'vista'}.png`}
+                        className="btn btn-secondary mt-3 inline-flex"
+                      >
+                        Descargar
+                      </a>
+                    </div>
+                  ) : null,
+                )}
+              </div>
             ) : (
               <div className="mt-4 flex min-h-105 items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 text-neutral-400">
                 Mockup interno no disponible
               </div>
             )}
-            <div className="mt-4 flex flex-wrap gap-3">
-              {mockupAsset &&
-              (mockupAsset.url.startsWith('data:') ||
-                mockupAsset.url.startsWith('http')) ? (
-                <a
-                  href={mockupAsset.url}
-                  download={`mockup-${quote.requestNumber}.png`}
-                  className="btn btn-secondary"
-                >
-                  Descargar mockup
-                </a>
-              ) : null}
-              {technicalAsset &&
-              (technicalAsset.url.startsWith('data:') ||
-                technicalAsset.url.startsWith('http')) ? (
-                <a
-                  href={technicalAsset.url}
-                  download={`print-ready-${quote.requestNumber}.png`}
-                  className="btn btn-primary"
-                >
-                  Descargar arte final
-                </a>
-              ) : null}
-            </div>
+            {technicalAssets.length > 0 ? (
+              <div className="mt-6 flex flex-wrap gap-3">
+                {technicalAssets.map((technicalAsset) =>
+                  technicalAsset.url.startsWith('data:') ||
+                  technicalAsset.url.startsWith('http') ? (
+                    <a
+                      key={technicalAsset.id}
+                      href={technicalAsset.url}
+                      download={`print-ready-${quote.requestNumber}-${technicalAsset.originalName ?? 'arte'}.png`}
+                      className="btn btn-primary"
+                    >
+                      Arte {assetZoneLabel(technicalAsset.originalName)}
+                    </a>
+                  ) : null,
+                )}
+              </div>
+            ) : null}
           </div>
 
           <div className="card p-6">
@@ -267,9 +288,12 @@ export default async function AdminQuoteDetailPage({
                 </dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="text-neutral-500">Zona</dt>
+                <dt className="text-neutral-500">Zona principal</dt>
                 <dd className="font-medium text-neutral-900">
                   {item?.printZone.label ?? 'N/A'}
+                  {mockupAssets.length > 1
+                    ? ` (+${mockupAssets.length - 1} cara${mockupAssets.length > 2 ? 's' : ''} más en mockups)`
+                    : ''}
                 </dd>
               </div>
               <div className="flex justify-between gap-3">

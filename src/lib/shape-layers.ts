@@ -77,8 +77,7 @@ export function applyLayerMove(
   return reordered.map((shape, index) => ({ ...shape, layer: index + 1 }))
 }
 
-/** z-index en el mockup; la selección queda encima para editar */
-export function getShapeZIndex(shape: DesignShape, isSelected: boolean): number {
-  const base = shape.layer ?? 1
-  return isSelected ? base + 10_000 : base
+/** z-index en el mockup según capa (1 = detrás, mayor = delante) */
+export function getShapeZIndex(shape: DesignShape): number {
+  return (shape.layer ?? 1) * 10
 }
