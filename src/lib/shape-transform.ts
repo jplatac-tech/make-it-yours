@@ -1,10 +1,11 @@
 import type { CSSProperties } from 'react'
 import type { DesignShape } from '../types/design'
+import { getShapeScales } from './shape-scales'
 
 export function getShapeTransform(shape: DesignShape) {
-  const scale = shape.scale ?? 1
+  const { scaleX, scaleY } = getShapeScales(shape)
   const rotation = shape.rotation ?? 0
-  return `rotate(${rotation}deg) scale(${scale})`
+  return `rotate(${rotation}deg) scale(${scaleX}, ${scaleY})`
 }
 
 export function getImageBorderRadius(shape: DesignShape) {

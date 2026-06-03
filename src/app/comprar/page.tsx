@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { DesignOrderPreview } from '../../components/comprar/design-order-preview'
+import { MultiDesignOrderPreview } from '../../components/comprar/multi-design-order-preview'
 import { PurchaseForm } from '../../components/forms/purchase-form'
 import {
   DEFAULT_PRODUCT_SLUG,
@@ -10,8 +11,10 @@ import {
   type ProductSlug,
 } from '../../lib/products'
 import {
+  getLineItemsWithDesign,
   hasDesignElements,
   loadDesign,
+  parseEditorSession,
   parseStoredDesign,
 } from '../../lib/design-storage'
 import { buildEditorPath } from '../../lib/editor-url'
@@ -25,11 +28,25 @@ export default function ComprarPage() {
     setReady(true)
   }, [])
 
+  const session = useMemo(
+    () => parseEditorSession(designJson),
+    [designJson],
+  )
+  const lineItemsWithDesign = useMemo(
+    () => getLineItemsWithDesign(session),
+    [session],
+  )
+  const isMulti = lineItemsWithDesign.length > 1
+
   const product = useMemo(() => {
+    const fromSession = lineItemsWithDesign[0]?.productSlug
     const parsed = parseStoredDesign(designJson)
-    const slug = (parsed?.productSlug as ProductSlug | undefined) ?? DEFAULT_PRODUCT_SLUG
+    const slug =
+      (fromSession as ProductSlug | undefined) ??
+      (parsed?.productSlug as ProductSlug | undefined) ??
+      DEFAULT_PRODUCT_SLUG
     return PRODUCTS[slug in PRODUCTS ? slug : DEFAULT_PRODUCT_SLUG]
-  }, [designJson])
+  }, [designJson, lineItemsWithDesign])
 
   if (!ready) {
     return (
@@ -71,8 +88,10 @@ export default function ComprarPage() {
           Enviar diseño para cotizar
         </h1>
         <p className="mt-3 text-neutral-600">
-          El color y las caras con diseño vienen del editor. Aquí solo indicas
-          talla y cantidad. Puedes{' '}
+          {isMulti
+            ? `Tienes ${lineItemsWithDesign.length} prendas con diseños distintos desde el editor. Indica talla y cantidad total.`
+            : 'El color y las caras con diseño vienen del editor. Aquí solo indicas talla y cantidad.'}{' '}
+          Puedes{' '}
           <Link
             href={buildEditorPath({ product: product.slug })}
             className="font-medium text-sky-700 underline"
@@ -82,17 +101,17 @@ export default function ComprarPage() {
           para ajustar el diseño.
         </p>
 
-        <DesignOrderPreview
-          designJson={designJson}
-          productName={product.name}
-        />
+        {isMulti ? (
+          <MultiDesignOrderPreview designJson={designJson} />
+        ) : (
+          <DesignOrderPreview
+            designJson={designJson}
+            productName={product.name}
+          />
+        )}
 
         <div className="card p-6">
-          <PurchaseForm
-            productSlug={product.slug}
-            productName={product.name}
-            designJson={designJson}
-          />
+          <PurchaseForm designJson={designJson} />
         </div>
       </div>
     </main>

@@ -1,11 +1,8 @@
 'use client'
 
 import { useMemo } from 'react'
-import {
-  getZonesWithDesign,
-  parseDesignPayload,
-  getShapesForZone,
-} from '../../lib/export-design'
+import { getZonesWithDesign, getShapesForZone } from '../../lib/export-design'
+import { resolveDesignPreviewPayload } from '../../lib/design-preview-payload'
 import {
   getProductColorLabel,
   getPrintZone,
@@ -23,7 +20,7 @@ type Props = {
 
 export function DesignOrderPreview({ designJson, productName }: Props) {
   const payload = useMemo(
-    () => parseDesignPayload(designJson),
+    () => resolveDesignPreviewPayload(designJson),
     [designJson],
   )
 

@@ -13,6 +13,8 @@ import {
   MOCKUP_UI_MOBILE,
   resolveMockupControlPx,
 } from '../../lib/mockup-control-sizes'
+import type { ResizeHandle } from '../../lib/resize-handles'
+import { getShapeScales } from '../../lib/shape-scales'
 import type { DesignShape } from '../../types/design'
 import type { ShapeBounds } from './canvas-element-types'
 import { SelectionFrameActions } from './selection-frame-actions'
@@ -31,7 +33,7 @@ type Props = {
   mobileControls?: boolean
   onSelect: () => void
   onDragStart: (e: React.PointerEvent) => void
-  onResizeStart: (e: React.PointerEvent) => void
+  onResizeStart: (e: React.PointerEvent, handle: ResizeHandle) => void
   onRotateStart: (e: React.PointerEvent) => void
   onCropEdgeStart: (
     edge: 'top' | 'right' | 'bottom' | 'left',
@@ -43,12 +45,12 @@ type Props = {
   onRemove?: () => void
 }
 
-/** Handle circular blanco con borde violeta (como Canva) */
-const whiteHandle =
-  'absolute z-[60] cursor-pointer rounded-full border-2 border-violet-500 bg-white shadow-[0_1px_4px_rgba(0,0,0,0.2)] touch-none'
+/** Círculo visible del handle (el padre define el área de toque) */
+const whiteHandleDot =
+  'rounded-full border-[1.5px] border-violet-500 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.18)] touch-none shrink-0'
 
-const whiteSideHandle =
-  'absolute z-[60] cursor-pointer rounded-full border-2 border-violet-500 bg-white shadow-[0_1px_4px_rgba(0,0,0,0.2)] touch-none'
+const whiteSideDot =
+  'rounded-full border-[1.5px] border-violet-500 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.18)] touch-none shrink-0'
 
 export function CanvasElement({
   shape,
@@ -70,40 +72,44 @@ export function CanvasElement({
   onRemove,
 }: Props) {
   const z = canvasZoom
+  const useFixedScreen = fixedScreenControls || mobileControls
   const ui = mobileControls ? MOCKUP_UI_MOBILE : MOCKUP_UI
-  const px = (n: number) => resolveMockupControlPx(n, z, fixedScreenControls)
+  const px = (n: number) => resolveMockupControlPx(n, z, useFixedScreen)
   const corner = px(ui.corner)
+  const cornerHit = px(ui.cornerHit)
   const sideW = px(ui.sideW)
   const sideH = px(ui.sideH)
+  const sideHitW = px(ui.sideHitW)
+  const sideHitH = px(ui.sideHitH)
   const cropEdge = px(ui.cropEdge)
   const borderW = px(ui.selectionBorder)
 
-  const scale = shape.scale ?? 1
+  const { scaleX, scaleY } = getShapeScales(shape)
   const rotation = shape.rotation ?? 0
-  const minTouch = fixedScreenControls ? 44 : 28
-  const hitPad = fixedScreenControls ? Math.max(0, (minTouch - corner) / 2) : 0
-  const cornerOut = corner / 2 + hitPad + px(1)
+  const cornerOut = cornerHit / 2 + px(1)
 
   const baseW =
     shape.type === 'image'
       ? (shape.width ?? 140)
-      : bounds.width / Math.max(scale, 0.01)
+      : bounds.width / Math.max(scaleX, 0.01)
   const baseH =
     shape.type === 'image'
       ? (shape.height ?? 140)
-      : bounds.height / Math.max(scale, 0.01)
+      : bounds.height / Math.max(scaleY, 0.01)
 
-  const cornerStyle = (
+  const cornerHitStyle = (
     cursor: string,
     pos: { left?: number; right?: number; top?: number; bottom?: number },
   ): React.CSSProperties => {
     const style: React.CSSProperties = {
-      width: corner + hitPad * 2,
-      height: corner + hitPad * 2,
+      position: 'absolute',
+      zIndex: 60,
+      width: cornerHit,
+      height: cornerHit,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       cursor,
-      boxSizing: 'border-box',
-      padding: hitPad,
-      backgroundClip: 'content-box',
     }
     if (pos.left !== undefined) style.left = -cornerOut
     if (pos.right !== undefined) style.right = -cornerOut
@@ -112,28 +118,26 @@ export function CanvasElement({
     return style
   }
 
-  const sideStyle = (
+  const sideHitStyle = (
     cursor: string,
-    axis: 'left' | 'right' | 'top' | 'bottom',
+    axis: 'left' | 'right',
   ): React.CSSProperties => {
-    const pad = fixedScreenControls ? 6 : 0
     const base: React.CSSProperties = {
-      width: axis === 'left' || axis === 'right' ? sideW + pad * 2 : sideH + pad * 2,
-      height: axis === 'left' || axis === 'right' ? sideH + pad * 2 : sideW + pad * 2,
+      position: 'absolute',
+      zIndex: 60,
+      width: sideHitW,
+      height: sideHitH,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       cursor,
-      padding: pad,
-      backgroundClip: 'content-box',
-      boxSizing: 'border-box',
+      top: '50%',
+      transform: 'translateY(-50%)',
     }
     if (axis === 'left') {
-      base.left = -sideW / 2 - pad - px(1)
-      base.top = '50%'
-      base.transform = 'translateY(-50%)'
-    }
-    if (axis === 'right') {
-      base.right = -sideW / 2 - pad - px(1)
-      base.top = '50%'
-      base.transform = 'translateY(-50%)'
+      base.left = -(sideHitW / 2) - px(1)
+    } else {
+      base.right = -(sideHitW / 2) - px(1)
     }
     return base
   }
@@ -149,7 +153,8 @@ export function CanvasElement({
         zIndex: getShapeZIndex(shape),
         opacity: shape.opacity ?? 1,
       }}
-      className="touch-none"
+      className="pointer-events-auto touch-none"
+      data-canvas-element
       onPointerDown={(e) => {
         e.stopPropagation()
         onSelect()
@@ -174,7 +179,7 @@ export function CanvasElement({
           style={{
             width: baseW,
             height: baseH,
-            transform: `scale(${scale})`,
+            transform: `scale(${scaleX}, ${scaleY})`,
           }}
         >
           {shape.type === 'image' && shape.src ? (
@@ -226,61 +231,99 @@ export function CanvasElement({
         {isSelected && !cropMode ? (
           <>
             <div
-              className={whiteHandle}
-              style={cornerStyle('nwse-resize', { left: 0, top: 0 })}
+              className="touch-manipulation"
+              style={cornerHitStyle('nwse-resize', { left: 0, top: 0 })}
               onPointerDown={(e) => {
                 e.stopPropagation()
-                onResizeStart(e)
+                e.currentTarget.setPointerCapture(e.pointerId)
+                onResizeStart(e, 'corner-nw')
               }}
-            />
+            >
+              <div
+                className={whiteHandleDot}
+                style={{ width: corner, height: corner }}
+              />
+            </div>
             <div
-              className={whiteHandle}
-              style={cornerStyle('nesw-resize', { right: 0, top: 0 })}
+              className="touch-manipulation"
+              style={cornerHitStyle('nesw-resize', { right: 0, top: 0 })}
               onPointerDown={(e) => {
                 e.stopPropagation()
-                onResizeStart(e)
+                e.currentTarget.setPointerCapture(e.pointerId)
+                onResizeStart(e, 'corner-ne')
               }}
-            />
+            >
+              <div
+                className={whiteHandleDot}
+                style={{ width: corner, height: corner }}
+              />
+            </div>
             <div
-              className={whiteHandle}
-              style={cornerStyle('nesw-resize', { left: 0, bottom: 0 })}
+              className="touch-manipulation"
+              style={cornerHitStyle('nesw-resize', { left: 0, bottom: 0 })}
               onPointerDown={(e) => {
                 e.stopPropagation()
-                onResizeStart(e)
+                e.currentTarget.setPointerCapture(e.pointerId)
+                onResizeStart(e, 'corner-sw')
               }}
-            />
+            >
+              <div
+                className={whiteHandleDot}
+                style={{ width: corner, height: corner }}
+              />
+            </div>
             <div
-              className={whiteHandle}
-              style={cornerStyle('nwse-resize', { right: 0, bottom: 0 })}
+              className="touch-manipulation"
+              style={cornerHitStyle('nwse-resize', { right: 0, bottom: 0 })}
               onPointerDown={(e) => {
                 e.stopPropagation()
-                onResizeStart(e)
+                e.currentTarget.setPointerCapture(e.pointerId)
+                onResizeStart(e, 'corner-se')
               }}
-            />
+            >
+              <div
+                className={whiteHandleDot}
+                style={{ width: corner, height: corner }}
+              />
+            </div>
 
-            {/* Lados (estirar horizontal) */}
+            {/* Lados: solo ancho (izq / der) */}
             <div
-              className={whiteSideHandle}
-              style={sideStyle('ew-resize', 'left')}
+              className="touch-manipulation"
+              style={sideHitStyle('ew-resize', 'left')}
               onPointerDown={(e) => {
                 e.stopPropagation()
-                onResizeStart(e)
+                e.currentTarget.setPointerCapture(e.pointerId)
+                onResizeStart(e, 'edge-left')
               }}
-            />
+            >
+              <div
+                className={whiteSideDot}
+                style={{ width: sideW, height: sideH }}
+              />
+            </div>
             <div
-              className={whiteSideHandle}
-              style={sideStyle('ew-resize', 'right')}
+              className="touch-manipulation"
+              style={sideHitStyle('ew-resize', 'right')}
               onPointerDown={(e) => {
                 e.stopPropagation()
-                onResizeStart(e)
+                e.currentTarget.setPointerCapture(e.pointerId)
+                onResizeStart(e, 'edge-right')
               }}
-            />
+            >
+              <div
+                className={whiteSideDot}
+                style={{ width: sideW, height: sideH }}
+              />
+            </div>
 
             <div
-              className="absolute left-1/2 z-[70] flex -translate-x-1/2 flex-col items-center"
-              style={{ top: bounds.height + px(6) }}
+              className="pointer-events-auto absolute left-1/2 z-[70] flex -translate-x-1/2 flex-col items-center"
+              style={{ top: bounds.height + px(ui.contextBarGap) }}
             >
               <SelectionFrameActions
+                btnPx={px(ui.frameBtn)}
+                iconPx={px(ui.frameIcon)}
                 onMoveStart={onDragStart}
                 onRemove={onRemove}
                 onRotateStart={onRotateStart}

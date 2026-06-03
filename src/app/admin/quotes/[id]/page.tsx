@@ -94,20 +94,38 @@ export default async function AdminQuoteDetailPage({
     notFound()
   }
 
-  const item = quote.items[0]
-  const mockupAssets =
-    item?.assets.filter((asset) => asset.kind === 'MOCKUP_PREVIEW') ?? []
-  const technicalAssets =
-    item?.assets.filter((asset) => asset.kind === 'TECHNICAL_FILE') ?? []
+  const items = quote.items
+  const mockupAssets = items.flatMap((row) =>
+    row.assets.filter((asset) => asset.kind === 'MOCKUP_PREVIEW'),
+  )
+  const technicalAssets = items.flatMap((row) =>
+    row.assets.filter((asset) => asset.kind === 'TECHNICAL_FILE'),
+  )
 
   function assetZoneLabel(originalName: string | null | undefined) {
+    if (originalName?.includes('prenda2')) return 'Prenda 2'
+    if (originalName?.includes('prenda3')) return 'Prenda 3'
+    if (originalName?.includes('prenda4')) return 'Prenda 4'
     if (originalName?.includes('FRONT')) return 'Frente'
     if (originalName?.includes('BACK')) return 'Espalda'
     return 'Vista'
   }
-  const designJsonString = item
-    ? JSON.stringify(item.designJson, null, 2)
-    : '{}'
+  const designJsonString =
+    items.length > 0
+      ? JSON.stringify(
+          items.length === 1
+            ? items[0].designJson
+            : items.map((row, index) => ({
+                prenda: index + 1,
+                product: row.productVariant.product.name,
+                color: row.productVariant.color,
+                size: row.productVariant.size,
+                designJson: row.designJson,
+              })),
+          null,
+          2,
+        )
+      : '{}'
   const designJsonHref = `data:application/json;charset=utf-8,${encodeURIComponent(
     designJsonString,
   )}`
@@ -261,61 +279,80 @@ export default async function AdminQuoteDetailPage({
           <section className="card p-6">
             <h2 className="text-lg font-semibold text-neutral-900">
               Datos del pedido
+              {items.length > 1 ? (
+                <span className="ml-2 text-sm font-normal text-neutral-500">
+                  ({items.length} prendas)
+                </span>
+              ) : null}
             </h2>
-            <dl className="mt-4 space-y-3 text-sm">
-              <div className="flex justify-between gap-3">
-                <dt className="text-neutral-500">Producto</dt>
-                <dd className="font-medium text-neutral-900">
-                  {item?.productVariant.product.name ?? 'N/A'}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-neutral-500">SKU</dt>
-                <dd className="font-medium text-neutral-900">
-                  {item?.productVariant.sku ?? 'N/A'}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-neutral-500">Color</dt>
-                <dd className="font-medium text-neutral-900">
-                  {item?.productVariant.color.toLowerCase() ?? 'N/A'}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-neutral-500">Talla</dt>
-                <dd className="font-medium text-neutral-900">
-                  {item?.productVariant.size ?? 'N/A'}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-neutral-500">Zona principal</dt>
-                <dd className="font-medium text-neutral-900">
-                  {item?.printZone.label ?? 'N/A'}
-                  {mockupAssets.length > 1
-                    ? ` (+${mockupAssets.length - 1} cara${mockupAssets.length > 2 ? 's' : ''} más en mockups)`
-                    : ''}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-neutral-500">Tamaño</dt>
-                <dd className="font-medium text-neutral-900">
-                  {item?.finalWidthIn?.toString() ?? 'N/A'} ×{' '}
-                  {item?.finalHeightIn?.toString() ?? 'N/A'} in
-                </dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-neutral-500">DPI</dt>
-                <dd className="font-medium text-neutral-900">
-                  {item?.printZone.dpi ?? 'N/A'}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-neutral-500">Cantidad</dt>
-                <dd className="font-medium text-neutral-900">
-                  {quote.quantityDesired}
-                </dd>
-              </div>
-            </dl>
+            <div className="mt-4 space-y-6">
+              {items.length === 0 ? (
+                <p className="text-sm text-neutral-500">Sin ítems registrados.</p>
+              ) : (
+                items.map((row, index) => (
+                  <dl
+                    key={row.id}
+                    className={
+                      'space-y-3 text-sm ' +
+                      (items.length > 1
+                        ? 'rounded-2xl border border-neutral-200 bg-neutral-50 p-4'
+                        : '')
+                    }
+                  >
+                    {items.length > 1 ? (
+                      <p className="text-xs font-semibold tracking-wide text-neutral-500 uppercase">
+                        Prenda {index + 1}
+                      </p>
+                    ) : null}
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-neutral-500">Producto</dt>
+                      <dd className="font-medium text-neutral-900">
+                        {row.productVariant.product.name}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-neutral-500">SKU</dt>
+                      <dd className="font-medium text-neutral-900">
+                        {row.productVariant.sku ?? 'N/A'}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-neutral-500">Color</dt>
+                      <dd className="font-medium text-neutral-900">
+                        {row.productVariant.color.toLowerCase()}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-neutral-500">Talla</dt>
+                      <dd className="font-medium text-neutral-900">
+                        {row.productVariant.size}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-neutral-500">Zona principal</dt>
+                      <dd className="font-medium text-neutral-900">
+                        {row.printZone.label}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-neutral-500">Tamaño</dt>
+                      <dd className="font-medium text-neutral-900">
+                        {row.finalWidthIn?.toString() ?? 'N/A'} ×{' '}
+                        {row.finalHeightIn?.toString() ?? 'N/A'} in
+                      </dd>
+                    </div>
+                  </dl>
+                ))
+              )}
+              <dl className="space-y-3 border-t border-neutral-200 pt-4 text-sm">
+                <div className="flex justify-between gap-3">
+                  <dt className="text-neutral-500">Cantidad total</dt>
+                  <dd className="font-medium text-neutral-900">
+                    {quote.quantityDesired}
+                  </dd>
+                </div>
+              </dl>
+            </div>
           </section>
 
           <section className="card p-6">

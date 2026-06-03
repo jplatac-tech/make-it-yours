@@ -200,8 +200,8 @@ export function HomeEditorInterfacePreview() {
           <div className="flex h-7 shrink-0 items-center justify-end gap-1 border-t border-neutral-200 bg-[#eef0f2] px-2">
             <span className="text-[8px] font-medium text-neutral-500">100%</span>
             <span className="mx-0.5 h-3 w-px bg-neutral-300" />
-            <span className="rounded-md bg-white px-1.5 py-0.5 text-[8px] font-semibold text-neutral-700 shadow-sm">
-              Frente 1/2
+            <span className="rounded-md bg-violet-600 px-1.5 py-0.5 text-[8px] font-semibold text-white shadow-sm">
+              Frente
             </span>
           </div>
         </div>

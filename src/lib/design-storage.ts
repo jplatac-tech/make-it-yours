@@ -1,6 +1,21 @@
 import type { ProductSlug } from './products'
+import {
+  parseEditorSession,
+  sessionHasDesign,
+  type EditorDesignSession,
+} from './design-line-items'
 
 export const DESIGN_STORAGE_KEY = 'make-it-yours-design'
+
+export type { EditorDesignSession } from './design-line-items'
+export {
+  parseEditorSession,
+  sessionHasDesign,
+  getActiveLineItem,
+  getLineItemsWithDesign,
+  lineItemToDesignJson,
+  lineItemHasDesign,
+} from './design-line-items'
 
 export type StoredDesign = {
   canvas: { width: number; height: number }
@@ -25,7 +40,9 @@ export const DESIGN_SAVE_EVENT = 'make-it-yours-design-save'
 export function saveDesign(json: string) {
   if (typeof window === 'undefined') return
   localStorage.setItem(DESIGN_STORAGE_KEY, json)
-  window.dispatchEvent(new CustomEvent(DESIGN_SAVE_EVENT))
+  queueMicrotask(() => {
+    window.dispatchEvent(new CustomEvent(DESIGN_SAVE_EVENT))
+  })
 }
 
 export function saveDesignPayload(payload: StoredDesign & Record<string, unknown>) {
@@ -42,6 +59,9 @@ export function parseStoredDesign(json: string | null): StoredDesign | null {
 }
 
 export function hasDesignElements(json: string | null): boolean {
+  const session = parseEditorSession(json)
+  if (session) return sessionHasDesign(session)
+
   const parsed = parseStoredDesign(json)
   if (!parsed) return false
   if (parsed.shapesByZone) {

@@ -20,6 +20,10 @@ export type DesignShape = {
   width?: number
   height?: number
   scale?: number
+  /** Escala horizontal (texto/icono); por defecto igual que `scale` */
+  scaleX?: number
+  /** Escala vertical (texto/icono); por defecto igual que `scale` */
+  scaleY?: number
   /** Grados (-180 a 180) */
   rotation?: number
   /** 0 = cuadrado, 50 = redondeado, 50+ = círculo en imágenes */

@@ -9,10 +9,13 @@ import {
   type ProductSlug,
 } from './products'
 import {
+  getLineItemsWithDesign,
   hasDesignElements,
+  lineItemToDesignJson,
+  parseEditorSession,
   parseStoredDesign,
-  type StoredDesign,
 } from './design-storage'
+import { getZonesWithDesign, parseDesignPayload } from './export-design'
 
 function digitsOnly(phone: string) {
   return phone.replace(/\D/g, '')
@@ -35,6 +38,26 @@ function getProductNameFromDesign(designJson: string | null): string | null {
 }
 
 export function formatDesignSummaryLines(designJson: string | null): string[] {
+  const session = parseEditorSession(designJson)
+  const lineItems = getLineItemsWithDesign(session)
+
+  if (lineItems.length > 1) {
+    const lines = ['', `— ${lineItems.length} diseños guardados en la web —`]
+    lineItems.forEach((item, index) => {
+      const name =
+        item.productSlug in PRODUCTS
+          ? PRODUCTS[item.productSlug as ProductSlug].name
+          : 'Prenda'
+      const front = item.shapesByZone.FRONT?.length ?? 0
+      const back = item.shapesByZone.BACK?.length ?? 0
+      lines.push(
+        `${index + 1}. ${name} · ${getProductColorLabel(item.productColor)} · Frente: ${front} · Espalda: ${back}`,
+      )
+    })
+    lines.push('Puedo enviar capturas desde el editor si lo necesitan.')
+    return lines
+  }
+
   const parsed = parseStoredDesign(designJson)
   if (!parsed) return []
 
@@ -105,6 +128,41 @@ export function formatDesignQuoteMessage(
   designJson: string | null,
   productName?: string,
 ): string {
+  const session = parseEditorSession(designJson)
+  const lineItems = getLineItemsWithDesign(session)
+
+  if (lineItems.length > 1) {
+    const lines = [
+      '¡Hola! Quiero cotizar varios diseños personalizados:',
+      '',
+      `${lineItems.length} prendas distintas en el editor:`,
+    ]
+    lineItems.forEach((item, index) => {
+      const json = lineItemToDesignJson(item)
+      const payload = parseDesignPayload(json)
+      const name =
+        item.productSlug in PRODUCTS
+          ? PRODUCTS[item.productSlug as ProductSlug].name
+          : productName ?? 'Prenda'
+      const color = getProductColorLabel(item.productColor)
+      const zones = getZonesWithDesign(payload)
+        .map((z) => getPrintZone(z)?.label ?? z)
+        .join(', ')
+      const front = item.shapesByZone.FRONT?.length ?? 0
+      const back = item.shapesByZone.BACK?.length ?? 0
+      lines.push(
+        '',
+        `${index + 1}. ${name} · ${color}`,
+        `   Zonas: ${zones || '—'} · Frente: ${front} elem. · Espalda: ${back} elem.`,
+      )
+    })
+    lines.push(
+      '',
+      'Ya armé los diseños en la web. ¿Me ayudan con cotización y producción?',
+    )
+    return lines.join('\n')
+  }
+
   const resolvedName =
     productName ?? getProductNameFromDesign(designJson) ?? 'Prenda personalizada'
 

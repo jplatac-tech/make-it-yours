@@ -16,8 +16,10 @@ export function EditorSaveIndicator() {
     }
     let hideTimer: number | undefined
     const onSave = () => {
-      if (hideTimer !== undefined) window.clearTimeout(hideTimer)
-      hideTimer = mark()
+      queueMicrotask(() => {
+        if (hideTimer !== undefined) window.clearTimeout(hideTimer)
+        hideTimer = mark()
+      })
     }
     window.addEventListener(DESIGN_SAVE_EVENT, onSave)
     return () => {

@@ -35,4 +35,24 @@ export const quoteDeliverySchema = z.object({
 })
 
 export type QuoteRequestInput = z.infer<typeof quoteRequestSchema>
+
+/** Una prenda dentro de un pedido con varios diseños */
+export const quoteLineItemSchema = quoteRequestSchema.omit({
+  quantityDesired: true,
+  comments: true,
+})
+
+export const multiQuoteRequestSchema = z.object({
+  quantityDesired: z.coerce
+    .number()
+    .int()
+    .min(1, 'La cantidad debe ser mayor a 0'),
+  comments: z.string().optional(),
+  designItemsJson: z
+    .string()
+    .min(2, 'Debe incluir al menos una prenda con diseño'),
+})
+
+export type QuoteLineItemInput = z.infer<typeof quoteLineItemSchema>
+export type MultiQuoteRequestInput = z.infer<typeof multiQuoteRequestSchema>
 export type QuoteDeliveryInput = z.infer<typeof quoteDeliverySchema>

@@ -10,15 +10,15 @@ type Props = {
   printZone: PrintZoneValue
   productColor: ProductColorValue
   onChange: (zone: PrintZoneValue) => void
-  /** mini = F/E; compact = pestañas; bar = fila inferior móvil/escritorio; thumbs = miniaturas */
-  variant?: 'mini' | 'compact' | 'bar' | 'thumbs'
+  /** mini = F/E; compact = pestañas; bar = fila inferior; toolbar = barra zoom; thumbs = miniaturas */
+  variant?: 'mini' | 'compact' | 'bar' | 'toolbar' | 'thumbs'
   /** Más alto y ancho en móvil (solo compact) */
   size?: 'default' | 'large'
 }
 
 const VIEWS: { zone: PrintZoneValue; label: string; short: string }[] = [
-  { zone: 'FRONT', label: 'Vista frontal', short: 'Frente' },
-  { zone: 'BACK', label: 'Vista trasera', short: 'Espalda' },
+  { zone: 'FRONT', label: 'Frente de la prenda', short: 'Frente' },
+  { zone: 'BACK', label: 'Espalda de la prenda', short: 'Espalda' },
 ]
 
 export function MockupViewToggle({
@@ -103,12 +103,45 @@ export function MockupViewToggle({
     )
   }
 
+  if (variant === 'toolbar') {
+    return (
+      <div
+        className="flex shrink-0 gap-0.5 rounded-lg border border-neutral-300 bg-white p-0.5 shadow-sm"
+        role="tablist"
+        aria-label="Lado de la prenda: frente o espalda"
+      >
+        {VIEWS.map(({ zone, label, short }) => {
+          const active = printZone === zone
+          return (
+            <button
+              key={zone}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              aria-label={label}
+              title={label}
+              onClick={() => onChange(zone)}
+              className={
+                'h-7 min-w-[3.25rem] cursor-pointer rounded-md px-2.5 text-[11px] font-bold transition sm:min-w-[3.5rem] sm:text-xs ' +
+                (active
+                  ? 'bg-violet-600 text-white shadow-sm'
+                  : 'text-neutral-600 hover:bg-neutral-50')
+              }
+            >
+              {short}
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
   if (variant === 'bar') {
     return (
       <div
         className="flex w-[10.25rem] shrink-0 gap-0.5 rounded-xl border border-neutral-200 bg-neutral-50 p-0.5 sm:w-[11rem]"
         role="tablist"
-        aria-label="Lado del suéter: frente o espalda"
+        aria-label="Lado de la prenda: frente o espalda"
       >
         {VIEWS.map(({ zone, label, short }) => {
           const active = printZone === zone

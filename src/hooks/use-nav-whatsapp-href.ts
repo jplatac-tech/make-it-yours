@@ -10,7 +10,11 @@ import {
   loadDesign,
 } from '../lib/design-storage'
 import { PRODUCTS, type ProductSlug } from '../lib/products'
-import { parseStoredDesign } from '../lib/design-storage'
+import {
+  getActiveLineItem,
+  parseEditorSession,
+  parseStoredDesign,
+} from '../lib/design-storage'
 import {
   buildWhatsAppUrl,
   formatCartWhatsAppMessage,
@@ -71,9 +75,10 @@ export function useNavWhatsAppHref(): NavWhatsAppAction {
     }
 
     if (isEditor && hasDesignElements(designJson)) {
-      const slug = parseStoredDesign(designJson)?.productSlug as
-        | ProductSlug
-        | undefined
+      const session = parseEditorSession(designJson)
+      const active = getActiveLineItem(session)
+      const slug = (active?.productSlug ??
+        parseStoredDesign(designJson)?.productSlug) as ProductSlug | undefined
       const productName =
         slug && slug in PRODUCTS ? PRODUCTS[slug].name : undefined
       return {

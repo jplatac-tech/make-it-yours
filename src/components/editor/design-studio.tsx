@@ -23,6 +23,17 @@ import {
   parseStoredDesign,
   saveDesign,
 } from '../../lib/design-storage'
+import {
+  buildEditorSession,
+  createEmptyLineItem,
+  lineItemHasDesign,
+  lineItemToStoredDesign,
+  newLineItemId,
+  parseEditorSession,
+  sessionToStorageJson,
+  type DesignLineItem,
+} from '../../lib/design-line-items'
+import { GarmentSlotStrip } from './garment-slot-strip'
 import { CrewneckMockup } from '../product/crewneck-mockup'
 import { MockupDesignLayer } from './mockup-design-layer'
 import { EditorPanel, type EditorPanelId } from './editor-panel'
@@ -49,6 +60,8 @@ import {
   type GuideLines,
 } from '../../lib/alignment-guides'
 import { clampScaleForShape } from '../../lib/size-limits'
+import { MIN_SHAPE_DISPLAY_PX } from '../../lib/resize-handles'
+import { getShapeScales, uniformScales } from '../../lib/shape-scales'
 import {
   applyLayerMove,
   ensureShapeLayers,
@@ -67,6 +80,7 @@ import {
   removeImageBackground,
 } from '../../lib/remove-background'
 import { EditorSaveIndicator } from './editor-save-indicator'
+import { ConfirmModal } from '../ui/confirm-modal'
 
 import { EDITOR_CANVAS_H, EDITOR_CANVAS_W } from '../../lib/editor-canvas'
 
@@ -81,18 +95,18 @@ const emptyShapesByZone = (): Record<PrintZoneValue, DesignShape[]> => ({
 })
 
 function getShapeBounds(shape: DesignShape) {
-  const scale = shape.scale ?? 1
+  const { scaleX, scaleY } = getShapeScales(shape)
   if (shape.type === 'image') {
     return {
-      width: (shape.width ?? 140) * scale,
-      height: (shape.height ?? 140) * scale,
+      width: (shape.width ?? 140) * scaleX,
+      height: (shape.height ?? 140) * scaleY,
     }
   }
   const fontSize = shape.fontSize ?? 28
   const chars = shape.text?.length ?? 4
   return {
-    width: Math.min(chars * fontSize * 0.55, 220) * scale,
-    height: fontSize * 1.25 * scale,
+    width: Math.min(chars * fontSize * 0.55, 220) * scaleX,
+    height: fontSize * 1.25 * scaleY,
   }
 }
 
@@ -120,6 +134,14 @@ function resolveProductSlug(
 
 export function DesignStudio({ searchParams }: DesignStudioProps) {
   const loadedFromUrl = useRef(false)
+  const initialItem = createEmptyLineItem()
+  const [lineItems, setLineItems] = useState<DesignLineItem[]>([initialItem])
+  const [activeItemId, setActiveItemId] = useState(initialItem.id)
+  const lineItemsRef = useRef(lineItems)
+  const activeItemIdRef = useRef(activeItemId)
+  lineItemsRef.current = lineItems
+  activeItemIdRef.current = activeItemId
+
   const [productSlug, setProductSlug] = useState<ProductSlug>(
     EDITOR_DEFAULT_PRODUCT_SLUG,
   )
@@ -165,12 +187,34 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
     width: number
     height: number
   } | null>(null)
-  const resizeState = useRef<{
-    id: string
-    startX: number
-    startY: number
-    originScale: number
-  } | null>(null)
+  const resizeState = useRef<
+    | {
+        kind: 'uniform'
+        id: string
+        startX: number
+        originScale: number
+      }
+    | {
+        kind: 'image-width'
+        id: string
+        startX: number
+        anchor: 'left' | 'right'
+        originX: number
+        originDisplayW: number
+        originScale: number
+      }
+    | {
+        kind: 'stretch-x'
+        id: string
+        startX: number
+        anchor: 'left' | 'right'
+        originX: number
+        originDisplayW: number
+        originScaleX: number
+        originScaleY: number
+      }
+    | null
+  >(null)
   const rotateState = useRef<{
     id: string
     startAngle: number
@@ -230,22 +274,158 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
     [selectedId, shapes],
   )
 
+  const snapshotActiveLineItem = useCallback(
+    (
+      nextByZone: Record<PrintZoneValue, DesignShape[]>,
+      zone: PrintZoneValue,
+      color: ProductColorValue,
+      slug: ProductSlug,
+    ): DesignLineItem => ({
+      id: activeItemIdRef.current,
+      productSlug: slug,
+      productColor: color,
+      shapesByZone: nextByZone,
+      printZone: zone,
+    }),
+    [],
+  )
+
+  const saveSessionItems = useCallback(
+    (items: DesignLineItem[], activeId: string) => {
+      lineItemsRef.current = items
+      saveDesign(
+        sessionToStorageJson(
+          buildEditorSession({ items, activeItemId: activeId }),
+        ),
+      )
+    },
+    [],
+  )
+
   const persist = useCallback(
     (
       nextByZone: Record<PrintZoneValue, DesignShape[]>,
       zone: PrintZoneValue,
       color: ProductColorValue,
+      slug: ProductSlug = productSlug,
     ) => {
-      const json = JSON.stringify({
-        canvas: { width: CANVAS_W, height: CANVAS_H },
-        shapesByZone: nextByZone,
-        productColor: color,
-        printZone: zone,
-        productSlug,
+      const active = snapshotActiveLineItem(nextByZone, zone, color, slug)
+      setLineItems((prev) => {
+        const items = prev.map((item) =>
+          item.id === active.id ? active : item,
+        )
+        lineItemsRef.current = items
+        return items
       })
-      saveDesign(json)
+      queueMicrotask(() => {
+        saveSessionItems(
+          lineItemsRef.current,
+          activeItemIdRef.current,
+        )
+      })
     },
-    [productSlug],
+    [productSlug, snapshotActiveLineItem, saveSessionItems],
+  )
+
+  const applyLineItemToEditor = useCallback((item: DesignLineItem) => {
+    setShapesByZone({
+      FRONT: ensureShapeLayers(item.shapesByZone.FRONT ?? []),
+      BACK: ensureShapeLayers(item.shapesByZone.BACK ?? []),
+    })
+    setProductColor(item.productColor)
+    setPrintZone(normalizePrintZone(item.printZone))
+    setProductSlug(item.productSlug)
+    setSelectedId(null)
+    setEditingTextId(null)
+    setCropModeId(null)
+  }, [])
+
+  const switchGarment = useCallback(
+    (targetId: string) => {
+      if (targetId === activeItemIdRef.current) return
+      const active = snapshotActiveLineItem(
+        shapesRef.current,
+        printZoneRef.current,
+        productColor,
+        productSlug,
+      )
+      const updated = lineItemsRef.current.map((item) =>
+        item.id === active.id ? active : item,
+      )
+      const target = updated.find((item) => item.id === targetId)
+      if (!target) return
+      setLineItems(updated)
+      setActiveItemId(targetId)
+      activeItemIdRef.current = targetId
+      saveSessionItems(updated, targetId)
+      applyLineItemToEditor(target)
+      setGarmentNotice(null)
+    },
+    [
+      applyLineItemToEditor,
+      productColor,
+      productSlug,
+      saveSessionItems,
+      snapshotActiveLineItem,
+    ],
+  )
+
+  const [garmentNotice, setGarmentNotice] = useState<string | null>(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+
+  const addGarment = useCallback(
+    (color: ProductColorValue = 'WHITE') => {
+      if (lineItemsRef.current.length >= 6) return
+      const active = snapshotActiveLineItem(
+        shapesRef.current,
+        printZoneRef.current,
+        productColor,
+        productSlug,
+      )
+      const updated = lineItemsRef.current.map((item) =>
+        item.id === active.id ? active : item,
+      )
+      const newItem = createEmptyLineItem({
+        productSlug,
+        productColor: color,
+      })
+      const nextItems = [...updated, newItem]
+      setLineItems(nextItems)
+      setActiveItemId(newItem.id)
+      activeItemIdRef.current = newItem.id
+      saveSessionItems(nextItems, newItem.id)
+      applyLineItemToEditor(newItem)
+      const label = PRODUCT_COLORS.find((c) => c.value === color)?.label ?? color
+      setGarmentNotice(
+        `Prenda ${nextItems.length} añadida · ${label}. Diseña en el mockup.`,
+      )
+      window.setTimeout(() => setGarmentNotice(null), 4000)
+    },
+    [
+      applyLineItemToEditor,
+      productColor,
+      productSlug,
+      saveSessionItems,
+      snapshotActiveLineItem,
+    ],
+  )
+
+  const garmentSlots = useMemo(
+    () =>
+      lineItems.map((item, index) => ({
+        id: item.id,
+        color: item.productColor,
+        label: `Prenda ${index + 1}`,
+        hasDesign: lineItemHasDesign(item),
+      })),
+    [lineItems],
+  )
+
+  const handleProductColorChange = useCallback(
+    (color: ProductColorValue) => {
+      setProductColor(color)
+    },
+    [],
   )
 
   useEffect(() => {
@@ -255,11 +435,31 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
     const tplId = searchParams.get('tpl')
     const productParam = searchParams.get('product')
     const stored = loadDesign()
+    const session = parseEditorSession(stored)
     const parsedStored = parseStoredDesign(stored)
 
-    setProductSlug(
-      resolveProductSlug(productParam, parsedStored?.productSlug ?? null),
+    const resolvedSlug = resolveProductSlug(
+      productParam,
+      session?.items.find((i) => i.id === session.activeItemId)?.productSlug ??
+        parsedStored?.productSlug ??
+        null,
     )
+    setProductSlug(resolvedSlug)
+
+    if (session?.items.length) {
+      const active =
+        session.items.find((i) => i.id === session.activeItemId) ??
+        session.items[0]
+      setLineItems(session.items)
+      setActiveItemId(active.id)
+      activeItemIdRef.current = active.id
+      applyLineItemToEditor({
+        ...active,
+        productSlug: resolveProductSlug(productParam, active.productSlug),
+      })
+      setEditorReady(true)
+      return
+    }
 
     if (stored && parsedStored) {
       try {
@@ -269,21 +469,30 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
           productColor?: ProductColorValue
           printZone?: string
         }
+        const legacyItem: DesignLineItem = {
+          id: newLineItemId(),
+          productSlug: resolvedSlug,
+          productColor: parsed.productColor ?? 'WHITE',
+          shapesByZone: emptyShapesByZone(),
+          printZone: normalizePrintZone(parsed.printZone),
+        }
         if (parsed.shapesByZone) {
-          setShapesByZone({
+          legacyItem.shapesByZone = {
             FRONT: ensureShapeLayers(parsed.shapesByZone.FRONT ?? []),
             BACK: ensureShapeLayers(parsed.shapesByZone.BACK ?? []),
-          })
+          }
         } else if (parsed.shapes?.length) {
           const zone = normalizePrintZone(parsed.printZone)
           const normalized = ensureShapeLayers(parsed.shapes)
-          setShapesByZone({
+          legacyItem.shapesByZone = {
             FRONT: zone === 'FRONT' ? normalized : [],
             BACK: zone === 'BACK' ? normalized : [],
-          })
+          }
         }
-        if (parsed.productColor) setProductColor(parsed.productColor)
-        if (parsed.printZone) setPrintZone(normalizePrintZone(parsed.printZone))
+        setLineItems([legacyItem])
+        setActiveItemId(legacyItem.id)
+        activeItemIdRef.current = legacyItem.id
+        applyLineItemToEditor(legacyItem)
         setEditorReady(true)
         return
       } catch {
@@ -299,12 +508,21 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
       const back = ensureShapeLayers(
         cloneShapesWithNewIds(tpl?.shapesByZone.BACK ?? []),
       )
-      setShapesByZone({ FRONT: front, BACK: back })
-      if (tpl?.productColor) setProductColor(tpl.productColor)
+      const tplItem: DesignLineItem = {
+        id: newLineItemId(),
+        productSlug: resolvedSlug,
+        productColor: tpl?.productColor ?? 'WHITE',
+        shapesByZone: { FRONT: front, BACK: back },
+        printZone: 'FRONT',
+      }
+      setLineItems([tplItem])
+      setActiveItemId(tplItem.id)
+      activeItemIdRef.current = tplItem.id
+      applyLineItemToEditor(tplItem)
     }
 
     setEditorReady(true)
-  }, [searchParams])
+  }, [searchParams, applyLineItemToEditor])
 
   useEffect(() => {
     if (!editorReady) return
@@ -391,22 +609,76 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
       if (resizeState.current) {
         setIsDragging(false)
         setGuideLines({ vertical: [], horizontal: [] })
-        const { id, startX, originScale } = resizeState.current
+        const rs = resizeState.current
         const zoom = canvasZoomRef.current || 1
-        const delta = (e.clientX - startX) / zoom / 100
+        const dx = (e.clientX - rs.startX) / zoom
         const shape = shapesRef.current[printZoneRef.current].find(
-          (sh) => sh.id === id,
+          (sh) => sh.id === rs.id,
         )
         if (!shape) return
-        const scale = clampScaleForShape(
-          shape,
-          originScale + delta,
-          CANVAS_W,
-          CANVAS_H,
-        )
-        setShapes((s) =>
-          s.map((sh) => (sh.id === id ? { ...sh, scale } : sh)),
-        )
+
+        if (rs.kind === 'uniform') {
+          const delta = dx / 100
+          const next = clampScaleForShape(
+            shape,
+            rs.originScale + delta,
+            CANVAS_W,
+            CANVAS_H,
+          )
+          setShapes((s) =>
+            s.map((sh) =>
+              sh.id === rs.id ? { ...sh, ...uniformScales(next) } : sh,
+            ),
+          )
+          return
+        }
+
+        if (rs.kind === 'image-width') {
+          const deltaW = rs.anchor === 'right' ? dx : -dx
+          const newDisplayW = Math.max(
+            MIN_SHAPE_DISPLAY_PX,
+            rs.originDisplayW + deltaW,
+          )
+          const newW = newDisplayW / Math.max(rs.originScale, 0.05)
+          setShapes((s) =>
+            s.map((sh) => {
+              if (sh.id !== rs.id) return sh
+              return {
+                ...sh,
+                width: newW,
+                ...(rs.anchor === 'left' ? { x: rs.originX + dx } : {}),
+              }
+            }),
+          )
+          return
+        }
+
+        if (rs.kind === 'stretch-x') {
+          const deltaW = rs.anchor === 'right' ? dx : -dx
+          const newDisplayW = Math.max(
+            MIN_SHAPE_DISPLAY_PX,
+            rs.originDisplayW + deltaW,
+          )
+          const ratio = newDisplayW / rs.originDisplayW
+          const newScaleX = clampScaleForShape(
+            shape,
+            rs.originScaleX * ratio,
+            CANVAS_W,
+            CANVAS_H,
+          )
+          setShapes((s) =>
+            s.map((sh) => {
+              if (sh.id !== rs.id) return sh
+              return {
+                ...sh,
+                scaleX: newScaleX,
+                scaleY: rs.originScaleY,
+                scale: newScaleX,
+                ...(rs.anchor === 'left' ? { x: rs.originX + dx } : {}),
+              }
+            }),
+          )
+        }
         return
       }
       if (!dragState.current) return
@@ -709,12 +981,21 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
     setMobileTab('layers')
   }
 
-  const removeSelected = () => {
+  const removeSelected = useCallback(() => {
     if (!selectedId) return
-    if (!window.confirm('¿Eliminar este elemento del diseño?')) return
-    setShapes((s) => renumberShapeLayers(s.filter((sh) => sh.id !== selectedId)))
+    window.setTimeout(() => setDeleteConfirmOpen(true), 0)
+  }, [selectedId])
+
+  const confirmRemoveSelected = () => {
+    if (!selectedId) {
+      setDeleteConfirmOpen(false)
+      return
+    }
+    const id = selectedId
+    setShapes((s) => renumberShapeLayers(s.filter((sh) => sh.id !== id)))
     setSelectedId(null)
     setCropModeId(null)
+    setDeleteConfirmOpen(false)
   }
 
   const startCropEdge = (
@@ -812,13 +1093,24 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
   ) : undefined
 
   return (
+    <>
+    <ConfirmModal
+      open={deleteConfirmOpen}
+      title="Eliminar elemento"
+      description="¿Quitar este elemento del diseño? Esta acción no se puede deshacer."
+      confirmLabel="Eliminar"
+      cancelLabel="Cancelar"
+      tone="danger"
+      onConfirm={confirmRemoveSelected}
+      onCancel={() => setDeleteConfirmOpen(false)}
+    />
     <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#eef0f4] lg:h-full lg:min-h-0 lg:flex-row">
       <div className="hidden h-full min-h-0 shrink-0 overflow-hidden lg:flex">
       <EditorPanel
         activePanel={activePanel}
         setActivePanel={setActivePanel}
         productColor={productColor}
-        setProductColor={setProductColor}
+        setProductColor={handleProductColorChange}
         onClearSelection={() => {
           setSelectedId(null)
           setEditingTextId(null)
@@ -856,8 +1148,31 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
           <EditorSaveIndicator />
           <div
             ref={mockupFitRef}
-            className="relative flex h-full min-h-0 items-center justify-center overflow-hidden px-2 py-2 max-lg:items-end max-lg:justify-center max-lg:pb-1 max-lg:pt-2 lg:px-6 lg:py-4"
+            className="relative flex h-full min-h-0 items-center justify-center overflow-hidden px-2 pt-2 pb-24 max-lg:items-end max-lg:justify-center max-lg:pt-2 lg:px-6 lg:py-4 lg:pb-28"
+            onPointerDown={(e) => {
+              if (editingTextId) return
+              const el = e.target as HTMLElement
+              if (el.closest('[data-canvas-element]')) return
+              if (el.closest('[data-canvas-root]')) return
+              setSelectedId(null)
+              setCropModeId(null)
+              setMobileTab(null)
+            }}
           >
+            <GarmentSlotStrip
+              items={garmentSlots}
+              activeId={activeItemId}
+              onSelect={switchGarment}
+              onAdd={addGarment}
+            />
+            {garmentNotice ? (
+              <div
+                className="pointer-events-none absolute top-3 left-1/2 z-40 max-w-[min(320px,92vw)] -translate-x-1/2 rounded-xl bg-neutral-900 px-4 py-2.5 text-center text-sm font-medium text-white shadow-lg"
+                role="status"
+              >
+                {garmentNotice}
+              </div>
+            ) : null}
             <MockupEditorChrome propertiesToolbar={propertiesToolbar} />
               {imageProcessing ? (
                 <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-black/25">
@@ -891,6 +1206,7 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
               >
                 <div
                   ref={canvasRef}
+                  data-canvas-root
                   className={
                     'isolate overflow-visible rounded-xl bg-transparent ' +
                     (isDesktop
@@ -914,11 +1230,12 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
                         }
                   }
                   onPointerDown={(e) => {
-                    if (e.target !== e.currentTarget) return
-                    if (!editingTextId) {
-                      setSelectedId(null)
-                      setCropModeId(null)
-                    }
+                    if (editingTextId) return
+                    const el = e.target as HTMLElement
+                    if (el.closest('[data-canvas-element]')) return
+                    setSelectedId(null)
+                    setCropModeId(null)
+                    setMobileTab(null)
                   }}
                 >
                 <CrewneckMockup
@@ -964,7 +1281,7 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
                       isEditing={isEditing}
                       cropMode={cropModeId === shape.id}
                       canvasZoom={effectiveCanvasZoom}
-                      fixedScreenControls={false}
+                      fixedScreenControls={!isDesktop}
                       mobileControls={!isDesktop}
                       onSelect={() => {
                         setSelectedId(shape.id)
@@ -985,13 +1302,48 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
                           height: bounds.height,
                         }
                       }}
-                      onResizeStart={(e) => {
+                      onResizeStart={(e, handle) => {
                         e.currentTarget.setPointerCapture(e.pointerId)
+                        const bounds = getShapeBounds(shape)
+                        const sc = shape.scale ?? 1
+                        const { scaleX, scaleY } = getShapeScales(shape)
+
+                        if (
+                          handle === 'edge-left' ||
+                          handle === 'edge-right'
+                        ) {
+                          const anchor =
+                            handle === 'edge-left' ? 'left' : 'right'
+                          if (shape.type === 'image') {
+                            resizeState.current = {
+                              kind: 'image-width',
+                              id: shape.id,
+                              startX: e.clientX,
+                              anchor,
+                              originX: shape.x,
+                              originDisplayW: bounds.width,
+                              originScale: sc,
+                            }
+                          } else {
+                            resizeState.current = {
+                              kind: 'stretch-x',
+                              id: shape.id,
+                              startX: e.clientX,
+                              anchor,
+                              originX: shape.x,
+                              originDisplayW: bounds.width,
+                              originScaleX: scaleX,
+                              originScaleY: scaleY,
+                            }
+                          }
+                          return
+                        }
+
                         resizeState.current = {
+                          kind: 'uniform',
                           id: shape.id,
                           startX: e.clientX,
-                          startY: e.clientY,
-                          originScale: shape.scale ?? 1,
+                          originScale: sc,
                         }
                       }}
                       onRotateStart={(e) => startRotate(shape, e)}
@@ -1035,6 +1387,7 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
         <div className="shrink-0">
           <MockupWorkspaceToolbar
             printZone={printZone}
+            productColor={productColor}
             onPrintZoneChange={setPrintZone}
             canvasZoom={isDesktop ? canvasZoom : mobileZoom}
             onCanvasZoomChange={isDesktop ? setCanvasZoom : setMobileZoom}
@@ -1050,7 +1403,7 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
             activePanel={activePanel}
             setActivePanel={setActivePanel}
             productColor={productColor}
-            setProductColor={setProductColor}
+            setProductColor={handleProductColorChange}
             onClearSelection={() => {
               setSelectedId(null)
               setEditingTextId(null)
@@ -1084,5 +1437,6 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
         </div>
       </section>
     </div>
+    </>
   )
 }

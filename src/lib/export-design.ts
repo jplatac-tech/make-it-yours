@@ -9,6 +9,7 @@ import {
   type MockupViewKey,
 } from './mockup-assets'
 import { resolveImageSrc } from './resolve-image-src'
+import { getShapeScales } from './shape-scales'
 
 const CANVAS_W = 400
 const CANVAS_H = 520
@@ -75,18 +76,18 @@ function loadHtmlImage(src: string): Promise<HTMLImageElement | null> {
 }
 
 export function getShapeBounds(shape: DesignShape) {
-  const scale = shape.scale ?? 1
+  const { scaleX, scaleY } = getShapeScales(shape)
   if (shape.type === 'image') {
     return {
-      width: (shape.width ?? 140) * scale,
-      height: (shape.height ?? 140) * scale,
+      width: (shape.width ?? 140) * scaleX,
+      height: (shape.height ?? 140) * scaleY,
     }
   }
   const fontSize = shape.fontSize ?? 28
   const chars = shape.text?.length ?? 4
   return {
-    width: Math.min(chars * fontSize * 0.55, 220) * scale,
-    height: fontSize * 1.25 * scale,
+    width: Math.min(chars * fontSize * 0.55, 220) * scaleX,
+    height: fontSize * 1.25 * scaleY,
   }
 }
 
@@ -95,7 +96,7 @@ async function drawShapeOnCtx(
   shape: DesignShape,
 ) {
   const b = getShapeBounds(shape)
-  const scale = shape.scale ?? 1
+  const { scaleX, scaleY } = getShapeScales(shape)
   const rotation = ((shape.rotation ?? 0) * Math.PI) / 180
   const cx = shape.x + b.width / 2
   const cy = shape.y + b.height / 2
@@ -109,8 +110,8 @@ async function drawShapeOnCtx(
     }
     const img = await loadHtmlImage(src)
     if (!img) return
-    const w = (shape.width ?? 140) * scale
-    const h = (shape.height ?? 140) * scale
+    const w = (shape.width ?? 140) * scaleX
+    const h = (shape.height ?? 140) * scaleY
     ctx.save()
     ctx.translate(cx, cy)
     ctx.rotate(rotation)
@@ -127,7 +128,7 @@ async function drawShapeOnCtx(
   ctx.save()
   ctx.translate(cx, cy)
   ctx.rotate(rotation)
-  ctx.scale(scale, scale)
+  ctx.scale(scaleX, scaleY)
   ctx.font = `${shape.fontSize ?? 28}px ${shape.fontFamily ?? 'Inter'}`
   ctx.fillStyle = shape.color ?? '#111'
   ctx.textAlign = 'center'
@@ -201,10 +202,10 @@ export async function renderTechnicalDataUrl(
     const b = getShapeBounds(shape)
     const relX = (shape.x - zone.printArea.x) * scaleX
     const relY = (shape.y - zone.printArea.y) * scaleY
-    const sc = shape.scale ?? 1
+    const { scaleX: sx, scaleY: sy } = getShapeScales(shape)
     ctx.save()
     ctx.translate(relX + (b.width * scaleX) / 2, relY + (b.height * scaleY) / 2)
-    ctx.scale(sc, sc)
+    ctx.scale(sx, sy)
     ctx.font = `${(shape.fontSize ?? 28) * scaleY}px ${shape.fontFamily ?? 'Inter'}`
     ctx.fillStyle = shape.color ?? '#111'
     ctx.textAlign = 'center'
@@ -227,9 +228,8 @@ export async function renderTechnicalDataUrl(
       const b = getShapeBounds(shape)
       const relX = (shape.x - zone.printArea.x) * scaleX
       const relY = (shape.y - zone.printArea.y) * scaleY
-      const sc = shape.scale ?? 1
-      const iw = (shape.width ?? b.width) * scaleX * sc
-      const ih = (shape.height ?? b.height) * scaleY * sc
+      const iw = b.width * scaleX
+      const ih = b.height * scaleY
       if (shape.flipX) {
         ctx.save()
         ctx.translate(relX + iw, relY)
