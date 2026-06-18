@@ -56,7 +56,7 @@ function PedidoExitoContent() {
 
         <p className="mt-4 text-neutral-600">
           {paid
-            ? `Pago de demostración registrado${paidTotal != null ? ` por ${formatPrice(paidTotal)}` : ''}. Te contactaremos para coordinar la producción.`
+            ? `Tu pago fue registrado${paidTotal != null ? ` por ${formatPrice(paidTotal)}` : ''}. Te contactaremos para coordinar la producción.`
             : `Revisaremos tu prenda y te contactaremos con los siguientes pasos. Si WhatsApp no se abrió solo, usa el botón de abajo (${STORE_WHATSAPP_DISPLAY}).`}
         </p>
 

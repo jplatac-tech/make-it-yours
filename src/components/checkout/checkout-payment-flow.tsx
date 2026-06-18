@@ -13,6 +13,14 @@ import {
   type CheckoutDraft,
 } from '../../lib/checkout-order'
 import { formatPrice } from '../../lib/utils'
+import {
+  formatCardCvcInput,
+  formatCardExpiryInput,
+  formatCardNumberInput,
+  hasPaymentErrors,
+  validatePaymentFields,
+  type PaymentFieldErrors,
+} from '../../lib/payment-card'
 
 type Step = 'invoice' | 'details' | 'payment' | 'processing'
 
@@ -75,6 +83,7 @@ export function CheckoutPaymentFlow() {
   const [cardExpiry, setCardExpiry] = useState('')
   const [cardCvc, setCardCvc] = useState('')
   const [cardName, setCardName] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<PaymentFieldErrors>({})
 
   useEffect(() => {
     const loaded = loadCheckoutDraft()
@@ -89,27 +98,30 @@ export function CheckoutPaymentFlow() {
     setAnimateKey((k) => k + 1)
     setStep(next)
     setError(null)
+    setFieldErrors({})
   }
 
   async function handlePay(event: React.FormEvent) {
     event.preventDefault()
     if (!draft) return
 
-    const digits = cardNumber.replace(/\D/g, '')
-    if (digits.length < 15) {
-      setError('Número de tarjeta inválido')
-      return
-    }
-    if (!/^\d{2}\/\d{2}$/.test(cardExpiry.trim())) {
-      setError('Vencimiento inválido (MM/AA)')
-      return
-    }
-    if (cardCvc.replace(/\D/g, '').length < 3) {
-      setError('CVC inválido')
+    const errors = validatePaymentFields({
+      cardName,
+      cardNumber,
+      cardExpiry,
+      cardCvc,
+    })
+    setFieldErrors(errors)
+
+    if (hasPaymentErrors(errors)) {
+      setError('Revisa los datos de la tarjeta')
       return
     }
 
-    goTo('processing')
+    setError(null)
+    setFieldErrors({})
+    setAnimateKey((k) => k + 1)
+    setStep('processing')
     await new Promise((r) => setTimeout(r, 2200))
 
     if (typeof window !== 'undefined') {
@@ -148,7 +160,7 @@ export function CheckoutPaymentFlow() {
         {step === 'invoice' ? (
           <div>
             <p className="text-xs font-semibold tracking-[0.2em] text-neutral-500 uppercase">
-              Factura · Prototipo
+              Factura
             </p>
             <h1 className="mt-2 text-2xl font-semibold text-neutral-950">
               Resumen del pedido
@@ -189,10 +201,6 @@ export function CheckoutPaymentFlow() {
               <span>Total</span>
               <span>{formatCheckoutTotal(draft)}</span>
             </div>
-
-            <p className="mt-4 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              Modo demostración: no se realizará un cargo real.
-            </p>
 
             <Button
               type="button"
@@ -292,7 +300,7 @@ export function CheckoutPaymentFlow() {
 
             <div className="rounded-2xl bg-gradient-to-br from-neutral-800 to-neutral-950 p-5 text-white shadow-lg">
               <p className="text-[10px] font-semibold tracking-widest text-white/60 uppercase">
-                Tarjeta de crédito · Demo
+                Tarjeta de crédito o débito
               </p>
               <p className="mt-4 font-mono text-lg tracking-widest">
                 {cardNumber || '•••• •••• •••• ••••'}
@@ -303,33 +311,122 @@ export function CheckoutPaymentFlow() {
               </div>
             </div>
 
-            <Input
-              value={cardName}
-              onChange={(e) => setCardName(e.target.value)}
-              placeholder="Nombre en la tarjeta"
-              required
-            />
-            <Input
-              value={cardNumber}
-              onChange={(e) => setCardNumber(e.target.value)}
-              placeholder="Número de tarjeta"
-              inputMode="numeric"
-              required
-            />
-            <div className="grid grid-cols-2 gap-3">
+            <div>
               <Input
-                value={cardExpiry}
-                onChange={(e) => setCardExpiry(e.target.value)}
-                placeholder="MM/AA"
+                value={cardName}
+                onChange={(e) => {
+                  setCardName(e.target.value)
+                  if (fieldErrors.cardName) {
+                    setFieldErrors((prev) => ({
+                      ...prev,
+                      cardName: validatePaymentFields({
+                        cardName: e.target.value,
+                        cardNumber,
+                        cardExpiry,
+                        cardCvc,
+                      }).cardName,
+                    }))
+                  }
+                }}
+                placeholder="Nombre en la tarjeta"
+                autoComplete="cc-name"
+                aria-invalid={Boolean(fieldErrors.cardName)}
                 required
               />
+              {fieldErrors.cardName ? (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.cardName}</p>
+              ) : null}
+            </div>
+
+            <div>
               <Input
-                value={cardCvc}
-                onChange={(e) => setCardCvc(e.target.value)}
-                placeholder="CVC"
+                value={cardNumber}
+                onChange={(e) => {
+                  const formatted = formatCardNumberInput(e.target.value)
+                  setCardNumber(formatted)
+                  if (fieldErrors.cardNumber) {
+                    setFieldErrors((prev) => ({
+                      ...prev,
+                      cardNumber: validatePaymentFields({
+                        cardName,
+                        cardNumber: formatted,
+                        cardExpiry,
+                        cardCvc,
+                      }).cardNumber,
+                    }))
+                  }
+                }}
+                placeholder="Número de tarjeta (16 dígitos)"
                 inputMode="numeric"
+                autoComplete="cc-number"
+                maxLength={19}
+                aria-invalid={Boolean(fieldErrors.cardNumber)}
                 required
               />
+              {fieldErrors.cardNumber ? (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.cardNumber}</p>
+              ) : null}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Input
+                  value={cardExpiry}
+                  onChange={(e) => {
+                    const formatted = formatCardExpiryInput(e.target.value)
+                    setCardExpiry(formatted)
+                    if (fieldErrors.cardExpiry) {
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        cardExpiry: validatePaymentFields({
+                          cardName,
+                          cardNumber,
+                          cardExpiry: formatted,
+                          cardCvc,
+                        }).cardExpiry,
+                      }))
+                    }
+                  }}
+                  placeholder="MM/AA"
+                  inputMode="numeric"
+                  autoComplete="cc-exp"
+                  maxLength={5}
+                  aria-invalid={Boolean(fieldErrors.cardExpiry)}
+                  required
+                />
+                {fieldErrors.cardExpiry ? (
+                  <p className="mt-1 text-xs text-red-600">{fieldErrors.cardExpiry}</p>
+                ) : null}
+              </div>
+              <div>
+                <Input
+                  value={cardCvc}
+                  onChange={(e) => {
+                    const formatted = formatCardCvcInput(e.target.value)
+                    setCardCvc(formatted)
+                    if (fieldErrors.cardCvc) {
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        cardCvc: validatePaymentFields({
+                          cardName,
+                          cardNumber,
+                          cardExpiry,
+                          cardCvc: formatted,
+                        }).cardCvc,
+                      }))
+                    }
+                  }}
+                  placeholder="CVC"
+                  inputMode="numeric"
+                  autoComplete="cc-csc"
+                  maxLength={4}
+                  aria-invalid={Boolean(fieldErrors.cardCvc)}
+                  required
+                />
+                {fieldErrors.cardCvc ? (
+                  <p className="mt-1 text-xs text-red-600">{fieldErrors.cardCvc}</p>
+                ) : null}
+              </div>
             </div>
 
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
@@ -360,7 +457,7 @@ export function CheckoutPaymentFlow() {
               Procesando pago…
             </p>
             <p className="mt-2 text-sm text-neutral-600">
-              Verificando tu pedido de demostración
+              Verificando tu pago…
             </p>
           </div>
         ) : null}

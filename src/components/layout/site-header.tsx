@@ -132,6 +132,8 @@ function NikeStyleHeader({
   const [menuOpen, setMenuOpen] = useState(false)
   const isDark = variant === 'dark'
   const isEditor = pathname === EDITOR_PATH
+  const isEditorWorkspace =
+    pathname === EDITOR_PATH || pathname.startsWith(`${EDITOR_PATH}/`)
   const showDesktopNav = !isEditor
   const showMobileMenu = true
 
@@ -238,13 +240,9 @@ function NikeStyleHeader({
               </Link>
             ) : null}
 
-            {isEditor ? (
+            {isEditorWorkspace ? (
               <WhatsAppNavButton wa={wa} isDark={isDark} />
-            ) : (
-              <div className="lg:hidden">
-                <WhatsAppNavButton wa={wa} isDark={isDark} />
-              </div>
-            )}
+            ) : null}
 
             <AccountHeaderTrigger isDark={isDark} />
 

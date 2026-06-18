@@ -2,9 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useMediaQuery } from '../../hooks/use-media-query'
 import { buildWhatsAppUrl } from '../../lib/whatsapp'
 import { HELP_WHATSAPP_MESSAGE } from '../../lib/constants'
+import { EDITOR_PATH } from '../../lib/start-editor'
 import { cn } from '../../lib/utils'
 
 export function WhatsAppIcon({ className }: { className?: string }) {
@@ -22,12 +22,11 @@ export function WhatsAppIcon({ className }: { className?: string }) {
 
 export function WhatsAppHelpFab() {
   const pathname = usePathname()
-  const isMobile = useMediaQuery('(max-width: 1023px)')
-  const isEditor =
-    pathname === '/disenar/editor' || pathname.startsWith('/disenar/')
+  const isEditorWorkspace =
+    pathname === EDITOR_PATH || pathname.startsWith(`${EDITOR_PATH}/`)
 
   if (pathname.startsWith('/admin')) return null
-  if (isMobile || isEditor) return null
+  if (isEditorWorkspace) return null
 
   const href = buildWhatsAppUrl(HELP_WHATSAPP_MESSAGE)
   const label = '¿Tienes dudas? Escríbenos por WhatsApp'
@@ -40,7 +39,7 @@ export function WhatsAppHelpFab() {
       aria-label={label}
       className={cn(
         'fixed z-[85] flex max-w-[min(calc(100vw-1.5rem),320px)] items-center gap-2.5 rounded-full bg-[#25D366] py-2.5 pl-4 pr-3 text-white shadow-[0_4px_20px_rgba(37,211,102,0.4)] transition hover:scale-[1.02] hover:bg-[#20bd5a] active:scale-[0.98] sm:gap-3 sm:py-3 sm:pl-5 sm:pr-4',
-        'right-5 bottom-6',
+        'right-4 bottom-[max(1.25rem,env(safe-area-inset-bottom,0px))] sm:right-5 sm:bottom-6',
       )}
     >
       <span className="min-w-0 text-left leading-tight">
