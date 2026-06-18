@@ -19,6 +19,13 @@ function slugFromFilename(name) {
 
 function shortTitle(filename) {
   const base = filename.replace(/\.[^.]+$/, '')
+  const titleOverrides = {
+    'design-bad-michael-jackson': 'BAD · Michael Jackson',
+    'design-bad-tipografia': 'BAD · Tipografía',
+    'diseño1': 'Diseño 1',
+    'diseño 2': 'Diseño 2',
+  }
+  if (titleOverrides[base]) return titleOverrides[base]
   if (/^\d+$/.test(base)) return `Diseño ${base}`
   return base
     .replace(/\s*Hoodies?\s*$/i, '')
@@ -28,11 +35,35 @@ function shortTitle(filename) {
     .trim()
 }
 
+function isFeaturedDesign(filename) {
+  const base = filename.replace(/\.[^.]+$/, '').toLowerCase()
+  return (
+    base.startsWith('diseño') ||
+    base.startsWith('diseno') ||
+    base.startsWith('design-')
+  )
+}
+
+const FEATURED_ORDER = [
+  'design-bad-michael-jackson.png',
+  'design-bad-tipografia.png',
+]
+
+function featuredSortRank(src) {
+  const index = FEATURED_ORDER.findIndex(
+    (name) => src.includes(name) || src.includes(encodeURIComponent(name)),
+  )
+  return index === -1 ? 999 : index
+}
+
 function inferDesignCategory(filename) {
   const n = filename.toLowerCase()
   if (/^\d+\.png$/i.test(filename)) return 'otros'
   if (/deporte|capucha deporte|buzo con capucha/.test(n)) return 'deportes'
-  if (/anime|japanese|japan|dragon|chinese|waves/.test(n)) return 'anime-japanese'
+  if (/michael|jackson|\bbad\b|ivancho/.test(n)) return 'streetwear'
+  if (/anime|japanese|japan|dragon|chinese|waves/.test(n)) {
+    return 'anime-japanese'
+  }
   if (/retro|groovy|pixel/.test(n)) return 'retro'
   if (/gaming|game|\btech\b|3d tech/.test(n)) return 'gaming-tech'
   if (/coffee|doodle|cute|teddy|magia|dama de honor|flower illustrative/.test(n)) {
@@ -61,13 +92,24 @@ function main() {
   let legacyIndex = 0
 
   for (const file of listPng(path.join(SIN_FONDO, 'imagenes'))) {
-    designs.push({
+    const entry = {
       id: `canva-${slugFromFilename(file)}`,
       title: shortTitle(file),
       src: `/gallery/sin-fondo/imagenes/${encodeURIComponent(file)}`,
       category: inferDesignCategory(file),
-    })
+    }
+    if (isFeaturedDesign(file)) entry.featured = true
+    designs.push(entry)
   }
+
+  designs.sort((a, b) => {
+    if (a.featured && !b.featured) return -1
+    if (!a.featured && b.featured) return 1
+    if (a.featured && b.featured) {
+      return featuredSortRank(a.src) - featuredSortRank(b.src)
+    }
+    return 0
+  })
 
   for (const file of listPng(path.join(SIN_FONDO, 'presets')).sort()) {
     legacyIndex += 1

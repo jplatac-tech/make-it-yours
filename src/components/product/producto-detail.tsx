@@ -1,18 +1,15 @@
 'use client'
 
-import Image from 'next/image'
-import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { useAppState } from '../app-state/app-state-provider'
 import { EditorEntryTrigger } from '../editor/editor-entry-trigger'
 import { trackEvent } from '../../lib/analytics'
-import {
-  getDefaultCatalogImageForProduct,
-} from '../../lib/catalog-looks'
+import { getDefaultCatalogImageForProduct } from '../../lib/catalog-looks'
 import { PRODUCT_SIZES, type ProductSlug } from '../../lib/products'
 import { formatPrice } from '../../lib/utils'
+import { ProductImageGallery } from './product-image-gallery'
 
 type Product = {
   slug: ProductSlug
@@ -25,10 +22,12 @@ type Product = {
 export function ProductoDetail({
   product,
   imageOverride,
+  imageGallery,
   displayName,
 }: {
   product: Product
   imageOverride?: string
+  imageGallery?: string[]
   displayName?: string
 }) {
   const { addToCart } = useAppState()
@@ -40,22 +39,20 @@ export function ProductoDetail({
     [product.price, quantity],
   )
 
-  const imageSrc =
-    imageOverride ?? getDefaultCatalogImageForProduct(product.slug)
+  const galleryImages = useMemo(() => {
+    if (imageGallery && imageGallery.length > 0) return imageGallery
+    const fallback =
+      imageOverride ?? getDefaultCatalogImageForProduct(product.slug)
+    return fallback ? [fallback] : []
+  }, [imageGallery, imageOverride, product.slug])
+
   const title = displayName ?? product.name
 
   return (
     <div className="mt-6 grid grid-cols-1 gap-6 sm:mt-8 sm:gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10">
       <div className="overflow-hidden rounded-xl border border-neutral-200 bg-[#f5f5f5] shadow-sm sm:rounded-2xl">
         <div className="relative aspect-[4/5] w-full">
-          <Image
-            src={imageSrc}
-            alt={title}
-            fill
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-cover object-center"
-            priority
-          />
+          <ProductImageGallery images={galleryImages} alt={title} />
         </div>
       </div>
 
@@ -141,22 +138,6 @@ export function ProductoDetail({
             Añadir al carrito
           </Button>
         </div>
-
-        <p className="text-xs text-neutral-500 sm:text-sm">
-          <strong>Personalizar</strong> abre el editor con esta prenda.{' '}
-          <strong>Carrito</strong> es para comprar la prenda base; el estampado se
-          cotiza aparte o desde el editor con{' '}
-          <Link href="/comprar" className="font-medium text-sky-700 underline">
-            Guardar pedido
-          </Link>
-          .
-        </p>
-
-        <ul className="space-y-2 rounded-xl border border-neutral-200 bg-white p-4 text-xs text-neutral-600 sm:rounded-2xl sm:p-5 sm:text-sm">
-          <li>Estampado en frente y espalda con medidas máximas en el editor.</li>
-          <li>Editor 2D sobre mockup real de crewneck.</li>
-          <li>Carrito → confirmación por WhatsApp con resumen del pedido.</li>
-        </ul>
       </section>
     </div>
   )

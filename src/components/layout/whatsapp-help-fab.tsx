@@ -24,12 +24,33 @@ export function WhatsAppHelpFab() {
   const pathname = usePathname()
   const isEditorWorkspace =
     pathname === EDITOR_PATH || pathname.startsWith(`${EDITOR_PATH}/`)
+  const isCompactFab =
+    pathname === '/' ||
+    pathname === '/catalogo' ||
+    pathname.startsWith('/productos/')
 
   if (pathname.startsWith('/admin')) return null
   if (isEditorWorkspace) return null
 
   const href = buildWhatsAppUrl(HELP_WHATSAPP_MESSAGE)
   const label = '¿Tienes dudas? Escríbenos por WhatsApp'
+
+  if (isCompactFab) {
+    return (
+      <Link
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={label}
+        className={cn(
+          'fixed z-[85] flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_4px_16px_rgba(37,211,102,0.35)] transition hover:scale-[1.04] hover:bg-[#20bd5a] active:scale-[0.96] sm:h-14 sm:w-14',
+          'right-3 bottom-[max(1rem,env(safe-area-inset-bottom,0px))] sm:right-5 sm:bottom-6',
+        )}
+      >
+        <WhatsAppIcon className="h-6 w-6 sm:h-7 sm:w-7" />
+      </Link>
+    )
+  }
 
   return (
     <Link

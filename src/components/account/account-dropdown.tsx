@@ -71,6 +71,14 @@ export function AccountDropdown({ onClose, embedded = false, isDark = false }: P
             </Link>
           ) : null}
 
+          <Link
+            href="/mis-pedidos"
+            onClick={onClose}
+            className="mt-4 flex min-h-[44px] w-full items-center justify-center rounded-full border border-neutral-300 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50"
+          >
+            Mis pedidos guardados
+          </Link>
+
           <button
             type="button"
             onClick={() => {

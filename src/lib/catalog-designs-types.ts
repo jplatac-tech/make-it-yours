@@ -15,6 +15,8 @@ export type CatalogDesign = {
   title: string
   src: string
   category: DesignCategoryId
+  /** Aparece primero en el panel Diseños del editor */
+  featured?: boolean
 }
 
 export type CatalogDesignGroup = {

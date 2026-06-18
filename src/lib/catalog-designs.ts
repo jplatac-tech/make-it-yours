@@ -36,10 +36,15 @@ export function getFeaturedHomeDesigns(limit = 16): CatalogDesign[] {
   return out
 }
 
+export function getFeaturedCatalogDesigns(): CatalogDesign[] {
+  return CATALOG_DESIGNS.filter((design) => design.featured)
+}
+
 export function getCatalogDesignGroups(): CatalogDesignGroup[] {
   const byCategory = new Map<DesignCategoryId, CatalogDesign[]>()
 
   for (const design of CATALOG_DESIGNS) {
+    if (design.featured) continue
     const list = byCategory.get(design.category) ?? []
     list.push(design)
     byCategory.set(design.category, list)
@@ -52,4 +57,11 @@ export function getCatalogDesignGroups(): CatalogDesignGroup[] {
       designs: byCategory.get(cat.id)!,
     }),
   )
+}
+
+/** Orden del carrusel móvil: destacados primero, luego el resto */
+export function getEditorCatalogDesigns(): CatalogDesign[] {
+  const featured = getFeaturedCatalogDesigns()
+  const rest = CATALOG_DESIGNS.filter((design) => !design.featured)
+  return [...featured, ...rest]
 }

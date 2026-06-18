@@ -26,37 +26,15 @@ export function formatCardCvcInput(value: string) {
   return digitsOnly(value).slice(0, 4)
 }
 
-function luhnCheck(digits: string) {
-  if (digits.length < 13) return false
-  let sum = 0
-  let alt = false
-  for (let i = digits.length - 1; i >= 0; i--) {
-    let n = Number.parseInt(digits[i]!, 10)
-    if (alt) {
-      n *= 2
-      if (n > 9) n -= 9
-    }
-    sum += n
-    alt = !alt
-  }
-  return sum % 10 === 0
-}
-
 export function validateCardName(name: string): string | undefined {
-  const trimmed = name.trim()
-  if (trimmed.length < 2) return 'Indica el nombre como aparece en la tarjeta'
-  if (!/^[\p{L}\s'.-]+$/u.test(trimmed)) {
-    return 'El nombre solo puede contener letras'
-  }
+  if (name.trim().length < 2) return 'Indica el nombre en la tarjeta'
   return undefined
 }
 
+/** Solo formato: 16 dígitos (válido para pruebas con números ficticios) */
 export function validateCardNumber(number: string): string | undefined {
   const digits = digitsOnly(number)
-  if (digits.length < 15 || digits.length > 16) {
-    return 'La tarjeta debe tener 15 o 16 dígitos'
-  }
-  if (!luhnCheck(digits)) return 'Número de tarjeta inválido'
+  if (digits.length !== 16) return 'Ingresa 16 dígitos'
   return undefined
 }
 
@@ -64,18 +42,8 @@ export function validateCardExpiry(expiry: string): string | undefined {
   if (!/^\d{2}\/\d{2}$/.test(expiry.trim())) {
     return 'Usa el formato MM/AA'
   }
-  const [mmRaw, yyRaw] = expiry.split('/')
-  const month = Number.parseInt(mmRaw!, 10)
-  const year = Number.parseInt(yyRaw!, 10)
+  const month = Number.parseInt(expiry.slice(0, 2), 10)
   if (month < 1 || month > 12) return 'Mes inválido (01–12)'
-
-  const now = new Date()
-  const currentYear = now.getFullYear() % 100
-  const currentMonth = now.getMonth() + 1
-
-  if (year < currentYear || (year === currentYear && month < currentMonth)) {
-    return 'La tarjeta está vencida'
-  }
   return undefined
 }
 

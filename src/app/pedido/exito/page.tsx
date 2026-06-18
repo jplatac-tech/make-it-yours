@@ -60,9 +60,16 @@ function PedidoExitoContent() {
 
         <p className="mt-4 text-neutral-600">
           {paid
-            ? `Tu pago fue registrado${paidTotal != null ? ` por ${formatPrice(paidTotal)}` : ''}. Se abrió WhatsApp con el resumen del pedido${previewCount > 0 ? ' y el enlace a la vista previa de tu diseño' : ''}. Solo falta que pulses *Enviar* en el chat (${STORE_WHATSAPP_DISPLAY}).`
-            : `Revisaremos tu prenda y te contactaremos con los siguientes pasos. Si WhatsApp no se abrió solo, usa el botón de abajo (${STORE_WHATSAPP_DISPLAY}).`}
+            ? `Tu pago fue registrado${paidTotal != null ? ` por ${formatPrice(paidTotal)}` : ''}. El pedido quedó guardado en tu galería. Si quieres avisarnos por WhatsApp (${STORE_WHATSAPP_DISPLAY}), usa el botón de abajo — no es obligatorio.`
+            : `Revisaremos tu prenda y te contactaremos con los siguientes pasos. Si quieres escribirnos por WhatsApp (${STORE_WHATSAPP_DISPLAY}), usa el botón de abajo.`}
         </p>
+
+        {previewCount > 0 ? (
+          <p className="mt-2 text-sm text-neutral-500">
+            Incluye {previewCount} vista{previewCount === 1 ? '' : 's'} previa
+            {previewCount === 1 ? '' : 's'} de tu diseño en el mensaje de WhatsApp.
+          </p>
+        ) : null}
 
         {whatsappHref ? (
           <a
@@ -71,11 +78,15 @@ function PedidoExitoContent() {
             rel="noopener noreferrer"
             className="btn btn-primary mt-8 inline-flex"
           >
-            {paid ? 'Reenviar pedido por WhatsApp' : 'Continuar por WhatsApp'}
+            {paid ? 'Enviar confirmación por WhatsApp' : 'Continuar por WhatsApp'}
           </a>
         ) : null}
 
-        <Link href="/" className="btn btn-secondary mt-4 inline-flex">
+        <Link href="/mis-pedidos" className="btn btn-secondary mt-4 inline-flex">
+          Ver mis pedidos guardados
+        </Link>
+
+        <Link href="/" className="mt-4 inline-block text-sm font-medium text-neutral-600 underline hover:text-neutral-900">
           Volver al inicio
         </Link>
         <p className="mt-4 text-sm text-neutral-600">

@@ -81,6 +81,12 @@ function isHero(filePath) {
   return path.basename(filePath) === HERO_BASENAME
 }
 
+/** Gráficos para el editor (no fotos de producto) */
+function isEditorDesign(filePath) {
+  const base = path.basename(filePath, path.extname(filePath)).toLowerCase()
+  return base.startsWith('diseño') || base.startsWith('diseno')
+}
+
 const HERO_UPSCALE_WIDTHS = [1280, 1920, 2560]
 const HERO_BLUR_WIDTHS = [1280, 1920, 2560]
 const HERO_BLUR_SIGMA = 10
@@ -255,7 +261,9 @@ async function main() {
     heroMeta = await buildHeroVariants(hero)
   }
 
-  const catalogImages = images.filter((file) => !isHero(file)).sort((a, b) => {
+  const catalogImages = images
+    .filter((file) => !isHero(file) && !isEditorDesign(file))
+    .sort((a, b) => {
     return path.basename(a).localeCompare(path.basename(b), 'es')
   })
 

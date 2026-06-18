@@ -33,15 +33,18 @@ export function HomeTrendsSection() {
         </div>
 
         <ul className="trends-product-grid mx-auto mt-8 w-full max-w-6xl list-none p-0 sm:mt-10">
-          {trending.map((product) => (
+          {trending.map((product, productIndex) => (
             <MotionStaggerItem
               key={product.catalogId}
               as="li"
               delay={80}
               threshold={0.08}
-              className="flex min-h-0 min-w-0"
+              className="flex min-h-0 min-w-0 catalog-grid-item"
             >
-              <CatalogLookCard product={product} />
+              <CatalogLookCard
+                product={product}
+                imagePriority={productIndex === 0}
+              />
             </MotionStaggerItem>
           ))}
         </ul>

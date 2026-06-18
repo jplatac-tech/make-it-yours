@@ -32,3 +32,24 @@ export function useInView<T extends HTMLElement>(threshold = 0.12) {
 
   return { ref, visible }
 }
+
+/** Observa si el elemento está en pantalla (para pausar carruseles fuera de vista). */
+export function useInViewport<T extends HTMLElement>(threshold = 0.08) {
+  const ref = useRef<T | null>(null)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      { threshold, rootMargin: '64px 0px' },
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [threshold])
+
+  return { ref, visible }
+}

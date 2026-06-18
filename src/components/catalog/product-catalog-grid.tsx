@@ -33,7 +33,7 @@ export function ProductCatalogGrid() {
         </p>
       </div>
 
-      <div className="sticky top-[var(--header-height)] z-20 border-b border-neutral-100 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
+      <div className="sticky top-[var(--header-height)] z-30 border-b border-neutral-100 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
         <div className="container relative">
           <div
             className="pointer-events-none absolute inset-y-0 left-0 z-10 w-5 bg-gradient-to-r from-white/95 to-transparent sm:hidden"
@@ -79,13 +79,17 @@ export function ProductCatalogGrid() {
           </p>
         ) : (
           <div key={filter} className="catalog-product-grid motion-catalog-enter">
-            {filtered.map((product) => (
+            {filtered.map((product, productIndex) => (
               <MotionStaggerItem
                 key={product.catalogId}
                 threshold={0.1}
-                className="flex min-h-0 min-w-0"
+                className="flex min-h-0 min-w-0 catalog-grid-item"
               >
-                <CatalogLookCard product={product} detailLabel="Detalle" />
+                <CatalogLookCard
+                  product={product}
+                  detailLabel="Detalle"
+                  imagePriority={productIndex < 2}
+                />
               </MotionStaggerItem>
             ))}
           </div>

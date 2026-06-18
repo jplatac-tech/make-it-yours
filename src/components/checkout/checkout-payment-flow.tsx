@@ -14,9 +14,9 @@ import {
 } from '../../lib/checkout-order'
 import {
   LAST_ORDER_STORAGE_KEY,
-  notifyStoreOrderViaWhatsApp,
   uploadDesignPreviewImages,
 } from '../../lib/order-whatsapp-notify'
+import { saveOrderToGallery } from '../../lib/order-gallery-storage'
 import { formatPrice } from '../../lib/utils'
 import {
   formatCardCvcInput,
@@ -134,37 +134,40 @@ export function CheckoutPaymentFlow() {
       : []
 
     if (typeof window !== 'undefined') {
+      const orderRecord = {
+        orderId: draft.id,
+        lines: draft.lines,
+        total: checkoutDraftTotal(draft),
+        comments: draft.comments,
+        designJson: draft.designJson,
+        previewLinks,
+        paidAt: new Date().toISOString(),
+        customerName,
+        customerEmail,
+        customerPhone,
+        address,
+      }
       sessionStorage.setItem(
         LAST_ORDER_STORAGE_KEY,
-        JSON.stringify({
-          orderId: draft.id,
-          lines: draft.lines,
-          total: checkoutDraftTotal(draft),
-          comments: draft.comments,
-          designJson: draft.designJson,
-          previewLinks,
-          paidAt: new Date().toISOString(),
-          customerName,
-          customerEmail,
-          customerPhone,
-          address,
-        }),
+        JSON.stringify(orderRecord),
       )
+      saveOrderToGallery({
+        id: draft.id,
+        paidAt: orderRecord.paidAt,
+        total: orderRecord.total,
+        lines: draft.lines,
+        previewLinks,
+        designJson: draft.designJson,
+        comments: draft.comments,
+        customerName,
+        customerEmail,
+        customerPhone,
+        address,
+        source: draft.source ?? 'carrito',
+      })
     }
 
     clearCheckoutDraft()
-
-    await notifyStoreOrderViaWhatsApp({
-      orderId: draft.id,
-      lines: draft.lines,
-      total: checkoutDraftTotal(draft),
-      comments: draft.comments,
-      previewLinks,
-      customerName,
-      customerEmail,
-      customerPhone,
-      address,
-    })
 
     router.push(`/pedido/exito?order=${encodeURIComponent(draft.id)}&paid=1`)
   }
@@ -487,7 +490,7 @@ export function CheckoutPaymentFlow() {
               Procesando pago…
             </p>
             <p className="mt-2 text-sm text-neutral-600">
-              Generando vista previa y abriendo WhatsApp…
+              Guardando tu pedido y generando vista previa del diseño…
             </p>
           </div>
         ) : null}

@@ -25,6 +25,8 @@ export type CatalogProduct = {
   price: number
   type: string
   image: string
+  /** Varias fotos en una misma card (carrusel) */
+  images?: string[]
   colorCount: number
   badge?: string
   highlight?: string

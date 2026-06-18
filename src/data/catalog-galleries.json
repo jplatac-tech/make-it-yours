@@ -1,0 +1,38 @@
+[
+  {
+    "id": "gallery-escaleras-naruto",
+    "productSlug": "camiseta-unisex",
+    "lookIds": [
+      "look-dasda",
+      "look-whatsapp-image-2026-06-17-at-11-16-48-pm"
+    ],
+    "tags": ["casual", "streetwear"],
+    "badge": "Nuevo look"
+  },
+  {
+    "id": "gallery-lago-anime",
+    "productSlug": "crewneck-unisex",
+    "lookIds": [
+      "look-sadasda",
+      "look-whatsapp-image-2026-06-18-at-10-03-26-am",
+      "look-whatsapp-image-2026-06-18-at-10-03-26-sdadas",
+      "look-whatsapp-image-2026-06-18-at-10-04-10-am"
+    ],
+    "tags": ["streetwear", "novedades"]
+  },
+  {
+    "id": "gallery-grupo-urbano",
+    "productSlug": "hoodie-unisex",
+    "lookIds": [
+      "look-whatsapp-image-2026-06-17-at-11-39-14-pm",
+      "look-a"
+    ],
+    "tags": ["streetwear", "esenciales"]
+  },
+  {
+    "id": "gallery-lifestyle-mix",
+    "productSlug": "camiseta-unisex",
+    "lookIds": ["look-d", "look-f", "look-g", "look-s"],
+    "tags": ["casual", "esenciales"]
+  }
+]

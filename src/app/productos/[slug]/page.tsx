@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ProductoDetail } from '../../../components/product/producto-detail'
-import { getLookById } from '../../../lib/catalog-looks'
+import { getLookById, resolveCatalogEntry } from '../../../lib/catalog-looks'
 import { getCatalogCardCopy } from '../../../lib/product-catalog'
 import { PRODUCTS, type ProductSlug } from '../../../lib/products'
 
@@ -40,7 +40,17 @@ export default async function ProductoPage({
   }
 
   const look = lookId ? getLookById(lookId) : undefined
-  const lookMatchesProduct = look?.productSlug === product.slug
+  const galleryEntry = lookId ? resolveCatalogEntry(lookId) : undefined
+  const lookMatchesProduct =
+    look?.productSlug === product.slug ||
+    galleryEntry?.productSlug === product.slug
+
+  const imageOverride =
+    lookMatchesProduct && galleryEntry?.image
+      ? galleryEntry.image
+      : lookMatchesProduct
+        ? look?.image
+        : undefined
 
   return (
     <main className="container py-6 sm:py-10 md:py-16">
@@ -49,7 +59,10 @@ export default async function ProductoPage({
       </Link>
       <ProductoDetail
         product={product}
-        imageOverride={lookMatchesProduct ? look.image : undefined}
+        imageOverride={imageOverride}
+        imageGallery={
+          lookMatchesProduct ? galleryEntry?.images : undefined
+        }
         displayName={
           lookMatchesProduct
             ? getCatalogCardCopy(product.slug).title
