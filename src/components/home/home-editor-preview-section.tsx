@@ -1,6 +1,10 @@
+'use client'
+
+import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { HomeEditorInterfacePreview } from './home-editor-interface-preview'
 import { EDITOR_PATH, PROBAR_DISENO_PATH } from '../../lib/start-editor'
+import { MotionSection } from '../ui/motion-section'
 
 const FEATURES = [
   'Mockup fotográfico en tiempo real',
@@ -11,10 +15,10 @@ const FEATURES = [
 
 export function HomeEditorPreviewSection() {
   return (
-    <section className="bg-white">
+    <MotionSection className="bg-white" threshold={0.1}>
       <div className="container py-12 sm:py-14 md:py-20">
         <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12">
-          <div className="order-2 flex justify-center px-1 sm:px-0 lg:order-1 lg:justify-end lg:pr-4">
+          <div className="order-2 flex justify-center px-1 transition duration-500 hover:scale-[1.01] sm:px-0 lg:order-1 lg:justify-end lg:pr-4">
             <HomeEditorInterfacePreview />
           </div>
 
@@ -30,29 +34,36 @@ export function HomeEditorPreviewSection() {
               interfaz que usarás al personalizar, antes de pedir tu cotización.
             </p>
             <ul className="mt-6 space-y-3">
-              {FEATURES.map((item) => (
-                <li
-                  key={item}
-                  className="flex items-start gap-3 text-sm text-neutral-800"
-                >
-                  <span
-                    className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-neutral-900"
-                    aria-hidden
-                  />
-                  {item}
-                </li>
-              ))}
+              {FEATURES.map((item, index) => {
+                const staggerStyle = {
+                  '--stagger-delay': `${index * 70}ms`,
+                } as CSSProperties
+
+                return (
+                  <li
+                    key={item}
+                    className="feature-item motion-stagger-item flex items-start gap-3 text-sm text-neutral-800"
+                    style={staggerStyle}
+                  >
+                    <span
+                      className="feature-dot mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-neutral-900"
+                      aria-hidden
+                    />
+                    {item}
+                  </li>
+                )
+              })}
             </ul>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link
                 href={EDITOR_PATH}
-                className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-neutral-900 px-6 text-sm font-bold text-white transition hover:bg-neutral-800"
+                className="btn-interactive inline-flex min-h-[48px] items-center justify-center rounded-full bg-neutral-900 px-6 text-sm font-bold text-white hover:bg-neutral-800"
               >
                 Abrir editor
               </Link>
               <Link
                 href={PROBAR_DISENO_PATH}
-                className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-neutral-300 bg-white px-6 text-sm font-bold text-neutral-900 transition hover:bg-neutral-50"
+                className="btn-interactive inline-flex min-h-[48px] items-center justify-center rounded-full border border-neutral-300 bg-white px-6 text-sm font-bold text-neutral-900 hover:bg-neutral-50"
               >
                 Probar un diseño
               </Link>
@@ -60,6 +71,6 @@ export function HomeEditorPreviewSection() {
           </div>
         </div>
       </div>
-    </section>
+    </MotionSection>
   )
 }

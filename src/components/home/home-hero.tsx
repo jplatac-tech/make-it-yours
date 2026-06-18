@@ -2,78 +2,106 @@
 
 import Link from 'next/link'
 import { EDITOR_PATH, PROBAR_DISENO_PATH } from '../../lib/start-editor'
+import {
+  buildHeroSrcSet,
+  CATALOG_HERO_BLUR_IMAGE,
+  CATALOG_HERO_BLUR_VARIANTS,
+  CATALOG_HERO_FOCUS_IMAGE,
+  CATALOG_HERO_FOCUS_VARIANTS,
+} from '../../lib/catalog-looks'
 
-const HERO_SRC = '/home-hero-1920.webp'
-const HERO_SRC_2X = '/home-hero.webp'
+const HERO_BLUR_SRCSET = buildHeroSrcSet(CATALOG_HERO_BLUR_VARIANTS, 'image/webp')
+const HERO_FOCUS_SRCSET = buildHeroSrcSet(CATALOG_HERO_FOCUS_VARIANTS, 'image/webp')
 
-const btnBase =
-  'inline-flex min-h-[50px] w-full items-center justify-center rounded-full px-4 text-center text-xs font-bold leading-tight transition duration-300 hover:-translate-y-0.5 active:translate-y-0 sm:min-w-0 sm:flex-1 sm:px-6 sm:text-sm'
+/** Encuadre retrato completo — centro-inferior (como antes del recorte 16:9) */
+const heroImgBase =
+  'absolute left-0 h-[132%] w-full max-w-none object-cover object-[center_62%] sm:object-[center_64%]'
+const heroImgFrame = heroImgBase + ' [transform:translate3d(0,-24%,0)_scale(1.04)]'
+const heroImgBlur =
+  heroImgBase + ' opacity-95 [transform:translate3d(0,-24%,0)_scale(1.06)]'
 
 export function HomeHero() {
   return (
-    <section className="relative min-h-[min(calc(100svh-60px),900px)] w-full overflow-hidden bg-neutral-950">
-      <picture className="absolute inset-0 block h-full w-full motion-hero-zoom">
-        <source srcSet={HERO_SRC_2X} media="(min-width: 1920px)" type="image/webp" />
-        <source srcSet={HERO_SRC} type="image/webp" />
+    <section className="relative min-h-[min(calc(100svh-var(--header-height)),860px)] w-full overflow-hidden bg-neutral-950">
+      {/* Capa 1: fondo muy suave */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={HERO_SRC}
-          srcSet={`${HERO_SRC} 1920w, ${HERO_SRC_2X} 2560w`}
+          src={CATALOG_HERO_BLUR_IMAGE}
+          srcSet={HERO_BLUR_SRCSET || undefined}
           sizes="100vw"
-          alt="Colección Make It Yours"
+          alt=""
           fetchPriority="high"
           decoding="async"
-          className="h-full w-full object-cover object-center"
+          className={heroImgBlur}
         />
-      </picture>
+      </div>
 
+      {/* Capa 2: foco en sujetos (centro-bajo) */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={CATALOG_HERO_FOCUS_IMAGE}
+          srcSet={HERO_FOCUS_SRCSET || undefined}
+          sizes="100vw"
+          alt="Colección Make It Yours — streetwear personalizable"
+          decoding="async"
+          className={heroImgFrame}
+        />
+      </div>
+
+      {/* Atmósfera */}
       <div
-        className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/25"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_55%,transparent_0%,rgba(0,0,0,0.35)_100%)]"
         aria-hidden
       />
-      <div className="absolute inset-x-0 bottom-0 h-[75%] bg-gradient-to-t from-black/95 via-black/60 to-transparent" />
+      <div
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/75"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-black/85 via-black/35 to-transparent"
+        aria-hidden
+      />
 
-      <div className="absolute inset-0 z-10 flex flex-col justify-end px-4 pb-16 sm:px-8 sm:pb-20 md:px-14 md:pb-28 lg:px-20 lg:pb-32">
-        <div className="max-w-3xl rounded-2xl border border-white/15 bg-black/80 p-5 shadow-2xl backdrop-blur-md sm:p-8 lg:max-w-4xl">
-          <p className="motion-fade-in-up text-xs font-bold tracking-[0.28em] text-white uppercase sm:text-[13px]">
-            Crea · Personaliza · Llévalo puesto
-          </p>
-          <h1 className="motion-fade-in-up motion-delay-1 mt-4 font-serif text-3xl leading-[1.08] font-normal tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl [text-shadow:0_2px_20px_rgba(0,0,0,0.8)]">
-            Si puedes imaginarlo, puedes estamparlo
-          </h1>
-          <p className="motion-fade-in-up motion-delay-2 mt-4 max-w-xl text-base leading-relaxed text-neutral-100 sm:text-lg">
-            Personaliza en minutos, revisa tu diseño en{' '}
-            <strong className="font-semibold text-white">mockup real</strong> y
-            cotiza sin presión cuando esté listo.
-          </p>
-          <div className="motion-fade-in-up motion-delay-3 mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Link
-              href={EDITOR_PATH}
-              className={
-                btnBase +
-                ' bg-white text-neutral-900 shadow-[0_4px_28px_rgba(0,0,0,0.45)] hover:bg-neutral-100'
-              }
-            >
-              Ir al editor
-            </Link>
-            <Link
-              href={PROBAR_DISENO_PATH}
-              className={
-                btnBase +
-                ' bg-white text-neutral-900 shadow-[0_4px_28px_rgba(0,0,0,0.45)] hover:bg-neutral-100'
-              }
-            >
-              Probar un diseño
-            </Link>
-            <Link
-              href="/catalogo"
-              className={
-                btnBase +
-                ' border-2 border-white bg-transparent text-white shadow-[0_4px_20px_rgba(0,0,0,0.35)] hover:bg-white/10'
-              }
-            >
-              Ver catálogo
-            </Link>
+      {/* Contenido */}
+      <div className="absolute inset-0 z-10 flex flex-col justify-end">
+        <div className="container pb-10 sm:pb-14 md:pb-16 lg:pb-20">
+          <div className="max-w-xl motion-fade-in-up">
+            <p className="inline-flex items-center gap-2.5 text-[10px] font-semibold tracking-[0.24em] text-white/85 uppercase sm:text-[11px]">
+              <span className="h-px w-6 bg-white/50" aria-hidden />
+              Crea · Personaliza · Llévalo puesto
+            </p>
+
+            <h1 className="motion-fade-in-up motion-delay-1 mt-4 max-w-[18rem] font-serif text-[1.75rem] leading-[1.1] font-normal tracking-tight text-white sm:max-w-md sm:text-4xl md:text-[2.35rem] lg:max-w-lg lg:text-[2.5rem] [text-shadow:0_2px_24px_rgba(0,0,0,0.35)]">
+              Si puedes imaginarlo, puedes estamparlo
+            </h1>
+
+            <p className="motion-fade-in-up motion-delay-2 mt-3 max-w-sm text-sm leading-relaxed text-white/80 sm:mt-4 sm:text-[15px]">
+              Editor con mockup real, diseños en minutos y cotización sin presión
+              por WhatsApp.
+            </p>
+
+            <div className="motion-fade-in-up motion-delay-3 mt-6 flex flex-col gap-2.5 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+              <Link
+                href={EDITOR_PATH}
+                className="btn-interactive inline-flex min-h-[44px] items-center justify-center rounded-full bg-white px-6 text-sm font-bold text-neutral-900 shadow-[0_4px_24px_rgba(0,0,0,0.25)] hover:bg-neutral-100 sm:min-h-[46px] sm:px-7"
+              >
+                Ir al editor
+              </Link>
+              <Link
+                href={PROBAR_DISENO_PATH}
+                className="btn-interactive inline-flex min-h-[44px] items-center justify-center rounded-full border border-white/60 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/20 sm:min-h-[46px] sm:px-6"
+              >
+                Probar un diseño
+              </Link>
+              <Link
+                href="/catalogo"
+                className="btn-interactive inline-flex min-h-[44px] items-center justify-center px-2 text-sm font-semibold text-white/90 underline-offset-4 hover:text-white hover:underline sm:min-h-[46px]"
+              >
+                Ver catálogo
+              </Link>
+            </div>
           </div>
         </div>
       </div>

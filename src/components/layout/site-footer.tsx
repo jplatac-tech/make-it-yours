@@ -15,9 +15,15 @@ export function SiteFooter() {
           Make It Yours — diseña, estampa y cotiza por WhatsApp.
         </p>
         <div className="flex flex-wrap gap-x-4 gap-y-2 font-semibold text-neutral-900">
-          <Link href="/">Inicio</Link>
-          <Link href="/catalogo">Catálogo</Link>
-          <Link href="/carrito">Carrito</Link>
+          <Link href="/" className="link-hover">
+            Inicio
+          </Link>
+          <Link href="/catalogo" className="link-hover">
+            Catálogo
+          </Link>
+          <Link href="/carrito" className="link-hover">
+            Carrito
+          </Link>
         </div>
       </div>
     </footer>

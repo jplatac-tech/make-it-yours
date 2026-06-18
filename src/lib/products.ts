@@ -46,7 +46,7 @@ export const PRODUCT_COLORS = [
   { label: 'Gris jaspe', value: 'HEATHER_GRAY', hex: '#8a8f98' },
 ] as const
 
-export const PRODUCT_SIZES = ['S', 'M', 'L', 'XL'] as const
+export const PRODUCT_SIZES = ['S', 'M', 'L', 'XL', 'XXL'] as const
 
 export const DEFAULT_PRODUCT_SIZE = 'M' as const
 

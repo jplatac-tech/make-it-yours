@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const quoteRequestSchema = z.object({
   productSlug: z.enum(['camiseta-unisex', 'hoodie-unisex', 'crewneck-unisex']),
   productColor: z.enum(['BLACK', 'WHITE', 'BEIGE', 'HEATHER_GRAY']),
-  productSize: z.enum(['S', 'M', 'L', 'XL']),
+  productSize: z.enum(['S', 'M', 'L', 'XL', 'XXL']),
   printZone: z.enum(['FRONT', 'BACK']),
   designJson: z.string().min(2, 'El diseño es obligatorio'),
   finalWidthIn: z.coerce.number().positive(),

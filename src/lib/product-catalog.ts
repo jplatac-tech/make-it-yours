@@ -1,6 +1,13 @@
 import { CREWNECK_UNISEX_MOCKUPS } from './mockup-assets'
 import { PRODUCT_COLORS, PRODUCTS, type ProductSlug } from './products'
 
+/** Fotos por defecto si no hay looks sincronizados */
+export const CATALOG_PRODUCT_IMAGES: Record<ProductSlug, string> = {
+  'crewneck-unisex': '/catalog/look-a.jpeg',
+  'hoodie-unisex': '/catalog/look-d.jpeg',
+  'camiseta-unisex': '/catalog/look-s.jpeg',
+}
+
 export type CatalogFilterId =
   | 'all'
   | 'novedades'
@@ -9,6 +16,8 @@ export type CatalogFilterId =
   | 'esenciales'
 
 export type CatalogProduct = {
+  /** Identificador único en la grilla (slug del producto o id del look) */
+  catalogId: string
   slug: ProductSlug
   name: string
   description: string
@@ -64,7 +73,10 @@ export const CATALOG_ORDER: ProductSlug[] = [
   'camiseta-unisex',
 ]
 
-function catalogImageForType(type: string | undefined): string {
+function catalogImageForSlug(slug: ProductSlug, type: string | undefined): string {
+  if (slug in CATALOG_PRODUCT_IMAGES) {
+    return CATALOG_PRODUCT_IMAGES[slug]
+  }
   switch (type) {
     case 'CREWNECK':
       return CREWNECK_UNISEX_MOCKUPS.WHITE.front
@@ -91,12 +103,13 @@ export function toCatalogProduct(
   const base = PRODUCTS[slug]
   const meta = CATALOG_PRODUCT_META[slug]
   return {
+    catalogId: slug,
     slug,
     name: row.name || base.name,
     description: row.description || base.description,
     price: row.price ?? base.price,
     type: row.type ?? base.type,
-    image: catalogImageForType(row.type ?? base.type),
+    image: catalogImageForSlug(slug, row.type ?? base.type),
     colorCount: PRODUCT_COLORS.length,
     badge: row.badge ?? meta.badge,
     highlight: meta.highlight,

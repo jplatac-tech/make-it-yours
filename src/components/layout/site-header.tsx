@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { AccountHeaderTrigger } from '../account/account-header-trigger'
 import { CartHeaderTrigger } from '../cart/cart-header-trigger'
+import { WhatsAppIcon } from './whatsapp-help-fab'
 import { useNavWhatsAppHref } from '../../hooks/use-nav-whatsapp-href'
 import { EDITOR_PATH, PROBAR_DISENO_PATH } from '../../lib/start-editor'
 
@@ -14,7 +15,7 @@ const NAV_LINKS = [
   { href: EDITOR_PATH, label: 'Ir al editor', icon: 'edit' },
 ] as const
 
-type NavIcon = (typeof NAV_LINKS)[number]['icon'] | 'account'
+type NavIcon = (typeof NAV_LINKS)[number]['icon']
 
 function NavItemIcon({ name, className }: { name: NavIcon; className?: string }) {
   const cn = className ?? 'h-5 w-5 shrink-0'
@@ -40,13 +41,6 @@ function NavItemIcon({ name, className }: { name: NavIcon; className?: string })
         <svg viewBox="0 0 24 24" className={cn} fill="none" stroke="currentColor" strokeWidth={1.75} aria-hidden>
           <path d="M4 20h4l9.5-9.5a2.12 2.12 0 00-3-3L5 17v3z" strokeLinejoin="round" />
           <path d="M13.5 6.5l3 3" strokeLinecap="round" />
-        </svg>
-      )
-    case 'account':
-      return (
-        <svg viewBox="0 0 24 24" className={cn} fill="none" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-          <circle cx="12" cy="8" r="3.5" />
-          <path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6" strokeLinecap="round" />
         </svg>
       )
     default:
@@ -95,6 +89,34 @@ function iconButtonClass(isDark: boolean) {
     (isDark
       ? 'text-white hover:bg-white/10'
       : 'text-neutral-900 hover:bg-neutral-100')
+  )
+}
+
+function WhatsAppNavButton({
+  wa,
+  isDark,
+  className,
+}: {
+  wa: ReturnType<typeof useNavWhatsAppHref>
+  isDark: boolean
+  className?: string
+}) {
+  return (
+    <a
+      href={wa.enabled ? wa.href : undefined}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-disabled={!wa.enabled}
+      aria-label={wa.label}
+      title={wa.label}
+      className={
+        (className ?? iconButtonClass(isDark)) +
+        ' bg-[#25D366] text-white hover:bg-[#20bd5a] ' +
+        (wa.enabled ? '' : ' pointer-events-none opacity-40')
+      }
+    >
+      <WhatsAppIcon className="h-5 w-5" />
+    </a>
   )
 }
 
@@ -208,24 +230,11 @@ function NikeStyleHeader({
               >
                 Guardar pedido
               </Link>
-            ) : (
-              <a
-                href={wa.enabled ? wa.href : undefined}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-disabled={!wa.enabled}
-                className={
-                  'hidden min-h-[40px] items-center justify-center rounded-full px-4 text-sm font-bold transition lg:inline-flex ' +
-                  (isDark
-                    ? 'border border-white/40 bg-white text-neutral-900 hover:bg-neutral-100'
-                    : 'border border-neutral-400 bg-neutral-800 text-white hover:bg-neutral-700') +
-                  (wa.enabled ? '' : ' pointer-events-none opacity-40')
-                }
-                title={wa.label}
-              >
-                Cotizar
-              </a>
-            )}
+            ) : null}
+
+            <div className="lg:hidden">
+              <WhatsAppNavButton wa={wa} isDark={isDark} />
+            </div>
 
             <AccountHeaderTrigger isDark={isDark} />
 
@@ -354,50 +363,6 @@ function NikeStyleHeader({
                   </li>
                 )
               })}
-              <li>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false)
-                    requestAnimationFrame(() => {
-                      document.getElementById('site-account-trigger')?.click()
-                    })
-                  }}
-                  className={
-                    'flex min-h-[52px] w-full items-center gap-3 rounded-xl px-3 transition ' +
-                    (isDark
-                      ? 'text-neutral-100 hover:bg-white/8'
-                      : 'text-neutral-900 hover:bg-neutral-50')
-                  }
-                >
-                  <span
-                    className={
-                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ' +
-                      (isDark
-                        ? 'bg-white/8 text-neutral-200'
-                        : 'bg-neutral-100 text-neutral-700')
-                    }
-                  >
-                    <NavItemIcon name="account" />
-                  </span>
-                  <span className="min-w-0 flex-1 text-left text-sm font-semibold">
-                    Mi cuenta
-                  </span>
-                  <svg
-                    viewBox="0 0 24 24"
-                    className={
-                      'h-4 w-4 shrink-0 opacity-40 ' +
-                      (isDark ? 'text-white' : 'text-neutral-900')
-                    }
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    aria-hidden
-                  >
-                    <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </li>
             </ul>
 
             {isEditor ? (
@@ -419,28 +384,6 @@ function NikeStyleHeader({
                 >
                   Guardar pedido
                 </Link>
-              </div>
-            ) : wa.enabled ? (
-              <div
-                className={
-                  'border-t p-3 ' +
-                  (isDark ? 'border-neutral-600/60' : 'border-neutral-100')
-                }
-              >
-                <a
-                  href={wa.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={
-                    'flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl text-sm font-bold transition ' +
-                    (isDark
-                      ? 'bg-white text-neutral-900 hover:bg-neutral-100'
-                      : 'bg-neutral-900 text-white hover:bg-neutral-800')
-                  }
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Cotizar por WhatsApp
-                </a>
               </div>
             ) : null}
           </nav>

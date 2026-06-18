@@ -11,6 +11,7 @@
     "postinstall": "prisma generate",
     "process-designs": "node scripts/strip-catalog-backgrounds.mjs",
     "sync-catalog": "node scripts/sync-catalog-manifest.mjs",
+    "sync-catalog-images": "node scripts/sync-catalog-images.mjs",
     "hero-image": "node scripts/generate-hero-image.mjs",
     "test": "npx tsx --test src/lib/design-storage.test.ts src/lib/shape-layers.test.ts src/lib/account-storage.test.ts"
   },

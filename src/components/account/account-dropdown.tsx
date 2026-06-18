@@ -7,26 +7,45 @@ import { AccountForm } from './account-form'
 
 type Props = {
   onClose: () => void
+  embedded?: boolean
+  isDark?: boolean
 }
 
-export function AccountDropdown({ onClose }: Props) {
+export function AccountDropdown({ onClose, embedded = false, isDark = false }: Props) {
   const { profile, clearProfile } = useAppState()
   const [tab, setTab] = useState<'login' | 'register'>('login')
 
+  const shellClass = embedded
+    ? 'flex w-full flex-col overflow-hidden rounded-xl ' +
+      (isDark ? 'bg-white/6' : 'bg-neutral-50')
+    : 'flex max-h-[inherit] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)] md:w-[min(calc(100vw-2rem),380px)] md:rounded-lg'
+
+  const titleClass = embedded
+    ? 'border-b px-4 py-3 text-left text-sm font-semibold ' +
+      (isDark
+        ? 'border-white/10 text-neutral-100'
+        : 'border-neutral-200 text-neutral-900')
+    : 'border-b border-neutral-100 px-5 py-4 text-center text-base font-medium text-neutral-900'
+
   return (
     <div
-      className="flex max-h-[inherit] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.12)] md:w-[min(calc(100vw-2rem),380px)] md:rounded-lg"
+      className={shellClass}
       role="dialog"
       aria-label="Mi cuenta"
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <h2 className="border-b border-neutral-100 px-5 py-4 text-center text-base font-medium text-neutral-900">
-        Mi cuenta
-      </h2>
+      {!embedded ? (
+        <h2 className={titleClass}>Mi cuenta</h2>
+      ) : null}
 
       {profile ? (
-        <div className="px-5 py-5">
-          <div className="rounded-xl bg-neutral-50 px-4 py-4">
+        <div className={embedded ? 'px-3 py-3' : 'px-5 py-5'}>
+          <div
+            className={
+              'rounded-xl px-4 py-4 ' +
+              (embedded && isDark ? 'bg-white/8' : 'bg-neutral-50')
+            }
+          >
             <p className="text-sm font-semibold text-neutral-900">
               {profile.name || profile.email}
             </p>
