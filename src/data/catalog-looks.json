@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-18T05:12:10.644Z",
+  "generatedAt": "2026-06-18T15:09:46.618Z",
   "heroImage": "/home-hero.jpeg",
   "heroWidth": 960,
   "heroVariants": [
@@ -77,6 +77,19 @@
   ],
   "looks": [
     {
+      "id": "look-dasda",
+      "name": "Hoodie casual — edición studio",
+      "description": "Camiseta ligera ideal para gráficos DTF.",
+      "image": "/catalog/look-dasda.jpeg",
+      "productSlug": "camiseta-unisex",
+      "tags": [
+        "casual",
+        "novedades"
+      ],
+      "badge": "Nuevo look",
+      "highlight": "Inspiración real de la colección Make It Yours."
+    },
+    {
       "id": "look-a",
       "name": "Crewneck street — look A",
       "description": "Suéter crewneck oversize listo para tu estampado.",
@@ -87,6 +100,18 @@
         "novedades"
       ],
       "badge": "Nuevo look",
+      "highlight": "Inspiración real de la colección Make It Yours."
+    },
+    {
+      "id": "look-s",
+      "name": "Streetwear crew — S",
+      "description": "Camiseta ligera ideal para gráficos DTF.",
+      "image": "/catalog/look-s.jpeg",
+      "productSlug": "camiseta-unisex",
+      "tags": [
+        "novedades",
+        "streetwear"
+      ],
       "highlight": "Inspiración real de la colección Make It Yours."
     },
     {
@@ -103,16 +128,15 @@
       "highlight": "Inspiración real de la colección Make It Yours."
     },
     {
-      "id": "look-dasda",
-      "name": "Hoodie casual — edición studio",
+      "id": "look-whatsapp-image-2026-06-17-at-11-39-14-pm",
+      "name": "Crewneck en escalera — street drop",
       "description": "Camiseta ligera ideal para gráficos DTF.",
-      "image": "/catalog/look-dasda.jpeg",
+      "image": "/catalog/look-whatsapp-image-2026-06-17-at-11-39-14-pm.jpeg",
       "productSlug": "camiseta-unisex",
       "tags": [
-        "casual",
+        "streetwear",
         "novedades"
       ],
-      "badge": "Nuevo look",
       "highlight": "Inspiración real de la colección Make It Yours."
     },
     {
@@ -121,6 +145,18 @@
       "description": "Suéter crewneck oversize listo para tu estampado.",
       "image": "/catalog/look-f.jpeg",
       "productSlug": "crewneck-unisex",
+      "tags": [
+        "casual",
+        "esenciales"
+      ],
+      "highlight": "Inspiración real de la colección Make It Yours."
+    },
+    {
+      "id": "look-whatsapp-image-2026-06-18-at-10-04-10-am",
+      "name": "Look urbano — sesión de fotos",
+      "description": "Camiseta ligera ideal para gráficos DTF.",
+      "image": "/catalog/look-whatsapp-image-2026-06-18-at-10-04-10-am.jpeg",
+      "productSlug": "camiseta-unisex",
       "tags": [
         "casual",
         "esenciales"
@@ -140,22 +176,10 @@
       "highlight": "Inspiración real de la colección Make It Yours."
     },
     {
-      "id": "look-s",
-      "name": "Streetwear crew — S",
-      "description": "Camiseta ligera ideal para gráficos DTF.",
-      "image": "/catalog/look-s.jpeg",
-      "productSlug": "camiseta-unisex",
-      "tags": [
-        "novedades",
-        "streetwear"
-      ],
-      "highlight": "Inspiración real de la colección Make It Yours."
-    },
-    {
-      "id": "look-whatsapp-image-2026-06-17-at-11-16-48-pm",
-      "name": "Hoodie — sesión nocturna",
+      "id": "look-sadasda",
+      "name": "Look sadasda",
       "description": "Suéter crewneck oversize listo para tu estampado.",
-      "image": "/catalog/look-whatsapp-image-2026-06-17-at-11-16-48-pm.jpeg",
+      "image": "/catalog/look-sadasda.jpeg",
       "productSlug": "crewneck-unisex",
       "tags": [
         "streetwear",
@@ -164,14 +188,38 @@
       "highlight": "Inspiración real de la colección Make It Yours."
     },
     {
-      "id": "look-whatsapp-image-2026-06-17-at-11-39-14-pm",
-      "name": "Crewneck en escalera — street drop",
+      "id": "look-whatsapp-image-2026-06-17-at-11-16-48-pm",
+      "name": "Hoodie — sesión nocturna",
       "description": "Hoodie con capucha — personaliza frente y espalda.",
-      "image": "/catalog/look-whatsapp-image-2026-06-17-at-11-39-14-pm.jpeg",
+      "image": "/catalog/look-whatsapp-image-2026-06-17-at-11-16-48-pm.jpeg",
       "productSlug": "hoodie-unisex",
       "tags": [
         "esenciales",
         "casual"
+      ],
+      "highlight": "Inspiración real de la colección Make It Yours."
+    },
+    {
+      "id": "look-whatsapp-image-2026-06-18-at-10-03-26-am",
+      "name": "Look urbano — sesión de fotos",
+      "description": "Suéter crewneck oversize listo para tu estampado.",
+      "image": "/catalog/look-whatsapp-image-2026-06-18-at-10-03-26-am.jpeg",
+      "productSlug": "crewneck-unisex",
+      "tags": [
+        "streetwear",
+        "esenciales"
+      ],
+      "highlight": "Inspiración real de la colección Make It Yours."
+    },
+    {
+      "id": "look-whatsapp-image-2026-06-18-at-10-03-26-sdadas",
+      "name": "Look urbano — sesión de fotos",
+      "description": "Hoodie con capucha — personaliza frente y espalda.",
+      "image": "/catalog/look-whatsapp-image-2026-06-18-at-10-03-26-sdadas.jpeg",
+      "productSlug": "hoodie-unisex",
+      "tags": [
+        "casual",
+        "novedades"
       ],
       "highlight": "Inspiración real de la colección Make It Yours."
     }

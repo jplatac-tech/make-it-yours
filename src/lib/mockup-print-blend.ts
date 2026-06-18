@@ -12,6 +12,7 @@ export function getMockupPrintBlendMode(
 ): MockupPrintBlendMode {
   switch (color) {
     case 'BLACK':
+    case 'BLUE':
       return 'screen'
     case 'HEATHER_GRAY':
       return 'soft-light'
@@ -25,6 +26,6 @@ export function getMockupPrintBlendMode(
 /** Opacidad del diseño sobre la prenda (ligero ajuste por color) */
 export function getMockupPrintLayerOpacity(color: ProductColorValue): number {
   if (color === 'HEATHER_GRAY') return 0.94
-  if (color === 'BLACK') return 0.92
+  if (color === 'BLACK' || color === 'BLUE') return 0.92
   return 1
 }

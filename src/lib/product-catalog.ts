@@ -40,6 +40,29 @@ export const CATALOG_FILTERS: { id: CatalogFilterId; label: string }[] = [
   { id: 'esenciales', label: 'Esenciales' },
 ]
 
+/** Texto corto en cards del catálogo (sin nombres de modelo ni marketing) */
+export const CATALOG_CARD_COPY: Record<
+  ProductSlug,
+  { title: string; subtitle: string }
+> = {
+  'camiseta-unisex': {
+    title: 'Camiseta básica',
+    subtitle: 'Unisex · personalizable',
+  },
+  'hoodie-unisex': {
+    title: 'Suéter básico',
+    subtitle: 'Unisex · personalizable',
+  },
+  'crewneck-unisex': {
+    title: 'Suéter básico',
+    subtitle: 'Unisex · personalizable',
+  },
+}
+
+export function getCatalogCardCopy(slug: ProductSlug) {
+  return CATALOG_CARD_COPY[slug]
+}
+
 /** Metadatos de merchandising (sin duplicar productos en secciones) */
 export const CATALOG_PRODUCT_META: Record<
   ProductSlug,
@@ -52,19 +75,18 @@ export const CATALOG_PRODUCT_META: Record<
 > = {
   'camiseta-unisex': {
     tags: ['casual', 'esenciales'],
-    highlight: 'Entrada accesible · ideal para eventos y uso diario',
+    highlight: 'Camiseta básica unisex',
     printTechnique:
       'Estampado DTF (Direct to Film): película que se fusiona con la tela. Colores vivos, buen detalle y resistencia al lavado suave.',
   },
   'hoodie-unisex': {
     tags: ['novedades', 'streetwear'],
-    highlight: 'Capucha y bolsillo · estampado clásico en pecho y espalda',
+    highlight: 'Suéter básico unisex',
   },
   'crewneck-unisex': {
     tags: ['novedades', 'streetwear', 'esenciales'],
     badge: 'Novedad',
-    highlight:
-      'Algodón de alto gramaje y corte oversize premium — por eso supera al hoodie en precio',
+    highlight: 'Suéter básico unisex',
   },
 }
 
@@ -106,14 +128,14 @@ export function toCatalogProduct(
   return {
     catalogId: slug,
     slug,
-    name: row.name || base.name,
-    description: row.description || base.description,
+    name: getCatalogCardCopy(slug).title,
+    description: getCatalogCardCopy(slug).subtitle,
     price: row.price ?? base.price,
     type: row.type ?? base.type,
     image: catalogImageForSlug(slug, row.type ?? base.type),
     colorCount: PRODUCT_COLORS.length,
     badge: row.badge ?? meta.badge,
-    highlight: meta.highlight,
+    highlight: getCatalogCardCopy(slug).subtitle,
     tags: meta.tags,
     printTechnique: meta.printTechnique,
   }

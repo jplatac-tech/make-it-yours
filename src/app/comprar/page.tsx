@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { DesignOrderPreview } from '../../components/comprar/design-order-preview'
 import { MultiDesignOrderPreview } from '../../components/comprar/multi-design-order-preview'
@@ -17,7 +16,7 @@ import {
   parseEditorSession,
   parseStoredDesign,
 } from '../../lib/design-storage'
-import { buildEditorPath } from '../../lib/editor-url'
+import { EditorEntryTrigger } from '../../components/editor/editor-entry-trigger'
 
 export default function ComprarPage() {
   const [designJson, setDesignJson] = useState<string | null>(null)
@@ -67,12 +66,9 @@ export default function ComprarPage() {
             Crea tu diseño en el editor y luego vuelve aquí para confirmar tu
             pedido.
           </p>
-          <Link
-            href={buildEditorPath()}
-            className="btn btn-primary mt-8 inline-flex"
-          >
+          <EditorEntryTrigger className="btn btn-primary mt-8 inline-flex">
             Ir al editor
-          </Link>
+          </EditorEntryTrigger>
         </div>
       </main>
     )

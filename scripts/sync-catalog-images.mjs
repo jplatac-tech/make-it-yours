@@ -187,6 +187,58 @@ async function buildHeroVariants(sourcePath) {
   }
 }
 
+/** Evita dos cards iguales seguidas (camiseta / suéter) en la grilla */
+function interleaveCatalogLooks(looks) {
+  const camisetas = []
+  const crewnecks = []
+  const hoodies = []
+
+  for (const look of looks) {
+    if (look.productSlug === 'camiseta-unisex') camisetas.push(look)
+    else if (look.productSlug === 'crewneck-unisex') crewnecks.push(look)
+    else hoodies.push(look)
+  }
+
+  const sueterQueues = [crewnecks, hoodies]
+  let sueterQueueIndex = 0
+
+  const takeSueter = () => {
+    for (let step = 0; step < sueterQueues.length; step += 1) {
+      const queue = sueterQueues[(sueterQueueIndex + step) % sueterQueues.length]
+      if (queue.length) {
+        sueterQueueIndex = (sueterQueueIndex + step + 1) % sueterQueues.length
+        return queue.shift()
+      }
+    }
+    return null
+  }
+
+  const result = []
+  let wantCamiseta = true
+
+  while (camisetas.length || crewnecks.length || hoodies.length) {
+    if (wantCamiseta && camisetas.length) {
+      result.push(camisetas.shift())
+      wantCamiseta = false
+      continue
+    }
+
+    const sueter = takeSueter()
+    if (sueter) {
+      result.push(sueter)
+      wantCamiseta = true
+      continue
+    }
+
+    if (camisetas.length) {
+      result.push(camisetas.shift())
+      wantCamiseta = false
+    }
+  }
+
+  return result
+}
+
 async function main() {
   const images = listImages(SRC)
   if (images.length === 0) {
@@ -236,6 +288,8 @@ async function main() {
     index += 1
   }
 
+  const orderedLooks = interleaveCatalogLooks(looks)
+
   fs.mkdirSync(path.dirname(MANIFEST), { recursive: true })
   fs.writeFileSync(
     MANIFEST,
@@ -249,14 +303,14 @@ async function main() {
         heroBlurVariants: heroMeta.heroBlurVariants,
         heroFocusImage: heroMeta.heroFocusImage,
         heroFocusVariants: heroMeta.heroFocusVariants,
-        looks,
+        looks: orderedLooks,
       },
       null,
       2,
     ),
   )
 
-  console.log(`Listo: ${looks.length} looks en catálogo → ${MANIFEST}`)
+  console.log(`Listo: ${orderedLooks.length} looks en catálogo → ${MANIFEST}`)
 }
 
 main().catch((err) => {

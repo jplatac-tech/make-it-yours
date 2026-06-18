@@ -6,7 +6,8 @@ import {
   CATALOG_HERO_FOCUS_IMAGE,
   CATALOG_HERO_FOCUS_VARIANTS,
 } from '../../lib/catalog-looks'
-import { EDITOR_PATH, PROBAR_DISENO_PATH } from '../../lib/start-editor'
+import { PROBAR_DISENO_PATH } from '../../lib/start-editor'
+import { HomeHeroEditorCta } from './home-hero-editor-cta'
 
 const HERO_BLUR_SRCSET = buildHeroSrcSet(CATALOG_HERO_BLUR_VARIANTS, 'image/webp')
 const HERO_FOCUS_SRCSET = buildHeroSrcSet(CATALOG_HERO_FOCUS_VARIANTS, 'image/webp')
@@ -82,13 +83,7 @@ export function HomeHero() {
             </p>
 
             <div className="motion-fade-in-up motion-delay-3 mt-6 flex flex-col gap-2.5 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-              <Link
-                href={EDITOR_PATH}
-                prefetch={false}
-                className="btn-interactive inline-flex min-h-[44px] items-center justify-center rounded-full bg-white px-6 text-sm font-bold text-neutral-900 shadow-[0_4px_24px_rgba(0,0,0,0.25)] hover:bg-neutral-100 sm:min-h-[46px] sm:px-7"
-              >
-                Ir al editor
-              </Link>
+              <HomeHeroEditorCta />
               <Link
                 href={PROBAR_DISENO_PATH}
                 prefetch={false}

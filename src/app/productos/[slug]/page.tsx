@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ProductoDetail } from '../../../components/product/producto-detail'
 import { getLookById } from '../../../lib/catalog-looks'
+import { getCatalogCardCopy } from '../../../lib/product-catalog'
 import { PRODUCTS, type ProductSlug } from '../../../lib/products'
 
 export async function generateMetadata({
@@ -49,7 +50,11 @@ export default async function ProductoPage({
       <ProductoDetail
         product={product}
         imageOverride={lookMatchesProduct ? look.image : undefined}
-        displayName={lookMatchesProduct ? look.name : undefined}
+        displayName={
+          lookMatchesProduct
+            ? getCatalogCardCopy(product.slug).title
+            : undefined
+        }
       />
     </main>
   )

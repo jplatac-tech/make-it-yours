@@ -13,6 +13,7 @@ import {
   EDITOR_DEFAULT_PRODUCT_SLUG,
   getPrintZone,
   normalizePrintZone,
+  parseProductColorParam,
   type ProductColorValue,
   type PrintZoneValue,
   type ProductSlug,
@@ -494,9 +495,13 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
 
     const tplId = searchParams.get('tpl')
     const productParam = searchParams.get('product')
+    const colorParam = parseProductColorParam(searchParams.get('color'))
     const stored = loadDesign()
     const session = parseEditorSession(stored)
     const parsedStored = parseStoredDesign(stored)
+
+    const withChosenColor = (item: DesignLineItem): DesignLineItem =>
+      colorParam ? { ...item, productColor: colorParam } : item
 
     const resolvedSlug = resolveProductSlug(
       productParam,
@@ -506,22 +511,28 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
     )
     setProductSlug(resolvedSlug)
 
+    let initialized = false
+
     if (session?.items.length) {
       const active =
         session.items.find((i) => i.id === session.activeItemId) ??
         session.items[0]
-      setLineItems(session.items)
-      setActiveItemId(active.id)
-      activeItemIdRef.current = active.id
-      applyLineItemToEditor({
+      const resolvedActive = withChosenColor({
         ...active,
         productSlug: resolveProductSlug(productParam, active.productSlug),
       })
+      const items = session.items.map((item) =>
+        item.id === resolvedActive.id ? resolvedActive : item,
+      )
+      setLineItems(items)
+      setActiveItemId(resolvedActive.id)
+      activeItemIdRef.current = resolvedActive.id
+      applyLineItemToEditor(resolvedActive)
       setEditorReady(true)
-      return
+      initialized = true
     }
 
-    if (stored && parsedStored) {
+    if (!initialized && stored && parsedStored) {
       try {
         const parsed = parsedStored as {
           shapes?: DesignShape[]
@@ -529,13 +540,13 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
           productColor?: ProductColorValue
           printZone?: string
         }
-        const legacyItem: DesignLineItem = {
+        const legacyItem = withChosenColor({
           id: newLineItemId(),
           productSlug: resolvedSlug,
           productColor: parsed.productColor ?? 'WHITE',
           shapesByZone: emptyShapesByZone(),
           printZone: normalizePrintZone(parsed.printZone),
-        }
+        })
         if (parsed.shapesByZone) {
           legacyItem.shapesByZone = {
             FRONT: ensureShapeLayers(parsed.shapesByZone.FRONT ?? []),
@@ -554,13 +565,13 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
         activeItemIdRef.current = legacyItem.id
         applyLineItemToEditor(legacyItem)
         setEditorReady(true)
-        return
+        initialized = true
       } catch {
         /* fall through */
       }
     }
 
-    if (tplId) {
+    if (!initialized && tplId) {
       const tpl = getTemplateById(tplId)
       const front = ensureShapeLayers(
         cloneShapesWithNewIds(tpl?.shapesByZone.FRONT ?? []),
@@ -568,17 +579,31 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
       const back = ensureShapeLayers(
         cloneShapesWithNewIds(tpl?.shapesByZone.BACK ?? []),
       )
-      const tplItem: DesignLineItem = {
+      const tplItem = withChosenColor({
         id: newLineItemId(),
         productSlug: resolvedSlug,
         productColor: tpl?.productColor ?? 'WHITE',
         shapesByZone: { FRONT: front, BACK: back },
         printZone: 'FRONT',
-      }
+      })
       setLineItems([tplItem])
       setActiveItemId(tplItem.id)
       activeItemIdRef.current = tplItem.id
       applyLineItemToEditor(tplItem)
+      initialized = true
+    }
+
+    if (!initialized) {
+      const emptyItem = withChosenColor(
+        createEmptyLineItem({
+          productSlug: resolvedSlug,
+          productColor: colorParam ?? 'WHITE',
+        }),
+      )
+      setLineItems([emptyItem])
+      setActiveItemId(emptyItem.id)
+      activeItemIdRef.current = emptyItem.id
+      applyLineItemToEditor(emptyItem)
     }
 
     setEditorReady(true)

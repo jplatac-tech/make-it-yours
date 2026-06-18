@@ -53,7 +53,7 @@ export function GarmentColorPicker({ value, onChange, compact = false }: Props) 
   return (
     <div ref={rootRef} className="relative">
       <span className="mb-1.5 block text-sm font-semibold text-neutral-600">
-        Color del crewneck unisex
+        Color de la prenda
       </span>
       <button
         type="button"

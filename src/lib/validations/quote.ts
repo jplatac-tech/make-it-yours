@@ -4,7 +4,7 @@ const optionalString = z.string().nullish()
 
 export const quoteRequestSchema = z.object({
   productSlug: z.enum(['camiseta-unisex', 'hoodie-unisex', 'crewneck-unisex']),
-  productColor: z.enum(['BLACK', 'WHITE', 'BEIGE', 'HEATHER_GRAY']),
+  productColor: z.enum(['BLACK', 'WHITE', 'BEIGE', 'HEATHER_GRAY', 'BLUE']),
   productSize: z.enum(['S', 'M', 'L', 'XL', 'XXL']),
   printZone: z.enum(['FRONT', 'BACK']),
   designJson: z.string().min(2, 'El diseño es obligatorio'),

@@ -1,6 +1,7 @@
 import looksData from '../data/catalog-looks.json'
 import {
   CATALOG_PRODUCT_META,
+  getCatalogCardCopy,
   type CatalogFilterId,
   type CatalogProduct,
 } from './product-catalog'
@@ -75,17 +76,18 @@ export function getLookById(id: string): CatalogLook | undefined {
 export function lookToCatalogProduct(look: CatalogLook): CatalogProduct {
   const base = PRODUCTS[look.productSlug]
   const meta = CATALOG_PRODUCT_META[look.productSlug]
+  const card = getCatalogCardCopy(look.productSlug)
   return {
     catalogId: look.id,
     slug: look.productSlug,
-    name: look.name,
-    description: look.description || base.description,
+    name: card.title,
+    description: card.subtitle,
     price: base.price,
     type: base.type,
     image: look.image,
     colorCount: PRODUCT_COLORS.length,
     badge: look.badge ?? meta?.badge,
-    highlight: look.highlight ?? meta?.highlight,
+    highlight: card.subtitle,
     tags: look.tags,
     printTechnique: meta?.printTechnique,
   }

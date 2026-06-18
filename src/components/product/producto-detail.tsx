@@ -6,12 +6,11 @@ import { useMemo, useState } from 'react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { useAppState } from '../app-state/app-state-provider'
-import { buildEditorPath } from '../../lib/editor-url'
+import { EditorEntryTrigger } from '../editor/editor-entry-trigger'
 import { trackEvent } from '../../lib/analytics'
 import {
   getDefaultCatalogImageForProduct,
 } from '../../lib/catalog-looks'
-import { CATALOG_PRODUCT_META } from '../../lib/product-catalog'
 import { PRODUCT_SIZES, type ProductSlug } from '../../lib/products'
 import { formatPrice } from '../../lib/utils'
 
@@ -41,8 +40,6 @@ export function ProductoDetail({
     [product.price, quantity],
   )
 
-  const editorHref = buildEditorPath({ product: product.slug })
-  const meta = CATALOG_PRODUCT_META[product.slug]
   const imageSrc =
     imageOverride ?? getDefaultCatalogImageForProduct(product.slug)
   const title = displayName ?? product.name
@@ -65,17 +62,12 @@ export function ProductoDetail({
       <section className="min-w-0 space-y-5 sm:space-y-6">
         <div>
           <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-800 sm:px-3 sm:text-xs">
-            {product.type}
+            Unisex
           </span>
           <h1 className="mt-3 text-xl font-semibold text-neutral-950 sm:mt-4 sm:text-2xl md:text-3xl">
             {title}
           </h1>
           <p className="mt-3 text-sm text-neutral-600 sm:mt-4 sm:text-base">{product.description}</p>
-          {meta?.highlight ? (
-            <p className="mt-3 text-sm font-medium text-neutral-500">
-              {meta.highlight}
-            </p>
-          ) : null}
           <p className="mt-4 text-2xl font-bold sm:mt-6 sm:text-3xl md:text-4xl">
             {formatPrice(product.price)}
           </p>
@@ -120,12 +112,12 @@ export function ProductoDetail({
         </p>
 
         <div className="grid grid-cols-1 gap-2.5 sm:gap-3 md:grid-cols-2">
-          <Link
-            href={editorHref}
+          <EditorEntryTrigger
+            product={product.slug}
             className="btn btn-primary inline-flex min-h-[44px] w-full items-center justify-center text-sm sm:min-h-[48px]"
           >
             Personalizar ahora
-          </Link>
+          </EditorEntryTrigger>
           <Button
             type="button"
             variant="secondary"

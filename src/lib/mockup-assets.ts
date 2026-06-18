@@ -1,6 +1,6 @@
 /** Mockup crewneck unisex — una foto por color y vista (frente / espalda) */
 
-export type MockupColorKey = 'BLACK' | 'WHITE' | 'BEIGE' | 'HEATHER_GRAY'
+export type MockupColorKey = 'BLACK' | 'WHITE' | 'BEIGE' | 'HEATHER_GRAY' | 'BLUE'
 
 export type MockupViewKey = 'FRONT' | 'BACK'
 
@@ -32,6 +32,11 @@ export const CREWNECK_UNISEX_MOCKUPS: Record<MockupColorKey, CrewneckMockupSet> 
     label: 'Gris jaspe unisex',
     front: `${MOCKUP_BASE}/gray-front.webp`,
     back: `${MOCKUP_BASE}/gray-back.webp`,
+  },
+  BLUE: {
+    label: 'Azul unisex',
+    front: `${MOCKUP_BASE}/blue-front.webp`,
+    back: `${MOCKUP_BASE}/blue-back.webp`,
   },
 }
 

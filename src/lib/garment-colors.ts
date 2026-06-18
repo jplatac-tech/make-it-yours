@@ -29,8 +29,18 @@ export const GARMENT_COLOR_HEX: Record<
     ribbing: '#7a7f88',
     highlight: 'rgba(255,255,255,0.15)',
   },
+  BLUE: {
+    fill: '#1e40af',
+    stroke: '#1e3a8a',
+    ribbing: '#1d4ed8',
+    highlight: 'rgba(255,255,255,0.1)',
+  },
 }
 
 export function defaultElementColor(garment: ProductColorValue): string {
-  return garment === 'BLACK' || garment === 'HEATHER_GRAY' ? '#ffffff' : '#111111'
+  return garment === 'BLACK' ||
+    garment === 'HEATHER_GRAY' ||
+    garment === 'BLUE'
+    ? '#ffffff'
+    : '#111111'
 }

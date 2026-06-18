@@ -4,9 +4,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import {
   formatCatalogPrice,
+  getCatalogCardCopy,
   type CatalogProduct,
 } from '../../lib/product-catalog'
-import { buildEditorPath } from '../../lib/editor-url'
+import { EditorEntryTrigger } from '../editor/editor-entry-trigger'
 
 function productDetailHref(product: CatalogProduct) {
   if (product.catalogId === product.slug) {
@@ -26,8 +27,7 @@ export function CatalogLookCard({
   detailLabel = 'Detalle',
 }: Props) {
   const detailHref = productDetailHref(product)
-  const editorHref = buildEditorPath({ product: product.slug })
-  const description = product.highlight || product.description
+  const cardCopy = getCatalogCardCopy(product.slug)
 
   return (
     <article className="catalog-look-card">
@@ -51,16 +51,19 @@ export function CatalogLookCard({
 
       <div className="catalog-look-card__body">
         <Link href={detailHref} className="catalog-look-card__title-link">
-          <h3 className="catalog-look-card__title">{product.name}</h3>
+          <h3 className="catalog-look-card__title">{cardCopy.title}</h3>
         </Link>
-        <p className="catalog-look-card__desc">{description}</p>
+        <p className="catalog-look-card__desc">{cardCopy.subtitle}</p>
         <p className="catalog-look-card__price">
           {formatCatalogPrice(product.price)}
         </p>
         <div className="catalog-look-card__actions">
-          <Link href={editorHref} className="btn-card btn-card--primary">
+          <EditorEntryTrigger
+            product={product.slug}
+            className="btn-card btn-card--primary"
+          >
             Personalizar
-          </Link>
+          </EditorEntryTrigger>
           <Link href={detailHref} className="btn-card btn-card--secondary">
             {detailLabel}
           </Link>

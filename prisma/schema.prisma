@@ -16,6 +16,7 @@ enum ProductColor {
   WHITE
   BEIGE
   HEATHER_GRAY
+  BLUE
 }
 
 enum ProductSize {

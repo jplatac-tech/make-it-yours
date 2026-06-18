@@ -20,6 +20,8 @@ const FILE_MAP = {
   'beige espalda.webp': 'beige-back.webp',
   'gris frontal.webp': 'gray-front.webp',
   'gris espalda.webp': 'gray-back.webp',
+  'azul frontal.webp': 'blue-front.webp',
+  'azul espalda.webp': 'blue-back.webp',
 }
 
 function main() {

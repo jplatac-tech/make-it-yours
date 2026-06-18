@@ -3,8 +3,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AccountHeaderTrigger } from '../account/account-header-trigger'
 import { CartHeaderTrigger } from '../cart/cart-header-trigger'
+import { EditorEntryTrigger } from '../editor/editor-entry-trigger'
 import { WhatsAppIcon } from './whatsapp-help-fab'
 import { useNavWhatsAppHref } from '../../hooks/use-nav-whatsapp-href'
 import { EDITOR_PATH, PROBAR_DISENO_PATH } from '../../lib/start-editor'
@@ -130,12 +132,17 @@ function NikeStyleHeader({
   pathname: string
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const isDark = variant === 'dark'
   const isEditor = pathname === EDITOR_PATH
   const isEditorWorkspace =
     pathname === EDITOR_PATH || pathname.startsWith(`${EDITOR_PATH}/`)
   const showDesktopNav = !isEditor
   const showMobileMenu = true
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     setMenuOpen(false)
@@ -175,16 +182,16 @@ function NikeStyleHeader({
           : 'border-neutral-200 bg-white text-neutral-900 shadow-sm')
       }
     >
-      <div className="relative mx-auto max-w-[1920px] px-3 sm:px-6 lg:px-10">
-        <div className="flex h-14 min-h-[52px] items-center justify-between gap-2 sm:h-[60px] sm:gap-3">
+      <div className="relative mx-auto max-w-[1920px] px-2.5 sm:px-6 lg:px-10">
+        <div className="flex h-14 min-h-[52px] items-center justify-between gap-1.5 sm:h-[60px] sm:gap-3">
           <Link
             href="/"
-            className={`min-w-0 max-w-[11rem] shrink sm:max-w-none ${logoClass}`}
+            className={`min-w-0 max-w-[8.5rem] shrink sm:max-w-none ${logoClass}`}
           >
             Make It Yours
           </Link>
 
-          <div className="flex shrink-0 items-center justify-end gap-0 sm:gap-1 md:gap-2">
+          <div className="flex min-w-0 shrink-0 items-center justify-end gap-0 sm:gap-1 md:gap-2">
             {showDesktopNav ? (
               <nav
                 className="hidden items-center gap-0.5 lg:flex"
@@ -192,15 +199,22 @@ function NikeStyleHeader({
               >
                 {NAV_LINKS.map((item) => {
                   const active = isNavActive(pathname, item.href)
+                  if (item.href === EDITOR_PATH) {
+                    return (
+                      <EditorEntryTrigger
+                        key={item.href}
+                        className={active ? desktopLinkActive : desktopLinkClass}
+                      >
+                        {item.label}
+                      </EditorEntryTrigger>
+                    )
+                  }
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
                       prefetch={
-                        item.href === EDITOR_PATH ||
-                        item.href === PROBAR_DISENO_PATH
-                          ? false
-                          : undefined
+                        item.href === PROBAR_DISENO_PATH ? false : undefined
                       }
                       aria-current={active ? 'page' : undefined}
                       className={active ? desktopLinkActive : desktopLinkClass}
@@ -232,7 +246,7 @@ function NikeStyleHeader({
               <Link
                 href="/comprar"
                 className={
-                  'inline-flex min-h-[36px] max-w-[9.5rem] items-center justify-center truncate rounded-full px-2.5 text-[11px] font-bold text-neutral-900 sm:max-w-none sm:px-4 sm:text-sm ' +
+                  'inline-flex min-h-[34px] max-w-[7.25rem] items-center justify-center truncate rounded-full px-2 text-[10px] font-bold text-neutral-900 sm:min-h-[36px] sm:max-w-none sm:px-4 sm:text-sm ' +
                   'border border-white/40 bg-white shadow-sm hover:bg-neutral-100'
                 }
               >
@@ -267,142 +281,196 @@ function NikeStyleHeader({
         </div>
       </div>
 
-      {menuOpen && showMobileMenu ? (
-        <div className="fixed inset-0 z-[45] lg:hidden" role="presentation">
-          <button
-            type="button"
-            className="absolute inset-0 bg-neutral-950/45 backdrop-blur-[3px]"
-            aria-label="Cerrar menú"
-            onClick={() => setMenuOpen(false)}
-          />
-          <nav
-            id="site-mobile-nav"
-            className={
-              'absolute right-0 bottom-0 left-0 z-50 flex max-h-[min(88dvh,640px)] flex-col overflow-hidden rounded-t-[1.35rem] border-t shadow-[0_-12px_40px_rgba(0,0,0,0.2)] ' +
-              (isDark
-                ? 'border-neutral-600/80 bg-[#252536]'
-                : 'border-neutral-200 bg-white')
-            }
-            style={{
-              paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))',
-            }}
-            aria-label="Menú móvil"
-          >
-            <div className="flex justify-center pt-3 pb-1" aria-hidden>
-              <div
-                className={
-                  'h-1 w-10 rounded-full ' +
-                  (isDark ? 'bg-white/25' : 'bg-neutral-300')
-                }
+      {menuOpen && showMobileMenu && mounted
+        ? createPortal(
+            <div className="fixed inset-0 z-[250] lg:hidden" role="presentation">
+              <button
+                type="button"
+                className="absolute inset-0 bg-neutral-950/50 backdrop-blur-[3px]"
+                aria-label="Cerrar menú"
+                onClick={() => setMenuOpen(false)}
               />
-            </div>
-            <div
-              className={
-                'border-b px-4 py-3 ' +
-                (isDark ? 'border-neutral-600/60' : 'border-neutral-100')
-              }
-            >
-              <p
+              <nav
+                id="site-mobile-nav"
                 className={
-                  'text-xs font-semibold tracking-wide uppercase ' +
-                  (isDark ? 'text-neutral-400' : 'text-neutral-500')
+                  'absolute right-0 bottom-0 left-0 z-10 flex max-h-[min(85dvh,560px)] flex-col overflow-hidden rounded-t-[1.35rem] border-t shadow-[0_-12px_40px_rgba(0,0,0,0.2)] ' +
+                  (isDark
+                    ? 'border-neutral-600/80 bg-[#252536]'
+                    : 'border-neutral-200 bg-white')
                 }
+                style={{
+                  paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))',
+                }}
+                aria-label="Menú móvil"
               >
-                Navegación
-              </p>
-            </div>
-
-            <ul
-              className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 [-webkit-overflow-scrolling:touch]"
-              role="list"
-            >
-              {NAV_LINKS.map((item) => {
-                const active = isNavActive(pathname, item.href)
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      prefetch={
-                        item.href === EDITOR_PATH ||
-                        item.href === PROBAR_DISENO_PATH
-                          ? false
-                          : undefined
-                      }
-                      aria-current={active ? 'page' : undefined}
-                      onClick={() => setMenuOpen(false)}
-                      className={
-                        'flex min-h-[52px] items-center gap-3 rounded-xl px-3 transition ' +
-                        (active
-                          ? isDark
-                            ? 'bg-white/12 text-white'
-                            : 'bg-neutral-100 text-neutral-950'
-                          : isDark
-                            ? 'text-neutral-100 hover:bg-white/8'
-                            : 'text-neutral-900 hover:bg-neutral-50')
-                      }
-                    >
-                      <span
-                        className={
-                          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ' +
-                          (active
-                            ? isDark
-                              ? 'bg-white/15 text-white'
-                              : 'bg-neutral-900 text-white'
-                            : isDark
-                              ? 'bg-white/8 text-neutral-200'
-                              : 'bg-neutral-100 text-neutral-700')
-                        }
-                      >
-                        <NavItemIcon name={item.icon} />
-                      </span>
-                      <span className="min-w-0 flex-1 text-left">
-                        <span className="block text-sm font-semibold">
-                          {item.label}
-                        </span>
-                      </span>
-                      <svg
-                        viewBox="0 0 24 24"
-                        className={
-                          'h-4 w-4 shrink-0 opacity-40 ' +
-                          (isDark ? 'text-white' : 'text-neutral-900')
-                        }
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        aria-hidden
-                      >
-                        <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-
-            {isEditor ? (
-              <div
-                className={
-                  'border-t p-3 ' +
-                  (isDark ? 'border-neutral-600/60' : 'border-neutral-100')
-                }
-              >
-                <Link
-                  href="/comprar"
+                <div className="flex justify-center pt-3 pb-1" aria-hidden>
+                  <div
+                    className={
+                      'h-1 w-10 rounded-full ' +
+                      (isDark ? 'bg-white/25' : 'bg-neutral-300')
+                    }
+                  />
+                </div>
+                <div
                   className={
-                    'flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl text-sm font-bold transition ' +
-                    (isDark
-                      ? 'bg-white text-neutral-900 hover:bg-neutral-100'
-                      : 'bg-neutral-900 text-white hover:bg-neutral-800')
+                    'border-b px-4 py-2.5 ' +
+                    (isDark ? 'border-neutral-600/60' : 'border-neutral-100')
                   }
-                  onClick={() => setMenuOpen(false)}
                 >
-                  Guardar pedido
-                </Link>
-              </div>
-            ) : null}
-          </nav>
-        </div>
-      ) : null}
+                  <p
+                    className={
+                      'text-xs font-semibold tracking-wide uppercase ' +
+                      (isDark ? 'text-neutral-400' : 'text-neutral-500')
+                    }
+                  >
+                    Navegación
+                  </p>
+                </div>
+
+                <ul
+                  className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 [-webkit-overflow-scrolling:touch]"
+                  role="list"
+                >
+                  {NAV_LINKS.map((item) => {
+                    const active = isNavActive(pathname, item.href)
+                    const rowClass =
+                      'flex min-h-[48px] w-full items-center gap-3 rounded-xl px-3 text-left transition ' +
+                      (active
+                        ? isDark
+                          ? 'bg-white/12 text-white'
+                          : 'bg-neutral-100 text-neutral-950'
+                        : isDark
+                          ? 'text-neutral-100 hover:bg-white/8'
+                          : 'text-neutral-900 hover:bg-neutral-50')
+
+                    if (item.href === EDITOR_PATH) {
+                      return (
+                        <li key={item.href}>
+                          <EditorEntryTrigger
+                            onOpen={() => setMenuOpen(false)}
+                            onNavigate={() => setMenuOpen(false)}
+                            className={rowClass}
+                          >
+                            <span
+                              className={
+                                'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ' +
+                                (active
+                                  ? isDark
+                                    ? 'bg-white/15 text-white'
+                                    : 'bg-neutral-900 text-white'
+                                  : isDark
+                                    ? 'bg-white/8 text-neutral-200'
+                                    : 'bg-neutral-100 text-neutral-700')
+                              }
+                            >
+                              <NavItemIcon name={item.icon} />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-semibold">
+                                {item.label}
+                              </span>
+                            </span>
+                            <svg
+                              viewBox="0 0 24 24"
+                              className={
+                                'h-4 w-4 shrink-0 opacity-40 ' +
+                                (isDark ? 'text-white' : 'text-neutral-900')
+                              }
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                              aria-hidden
+                            >
+                              <path
+                                d="M9 6l6 6-6 6"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </EditorEntryTrigger>
+                        </li>
+                      )
+                    }
+
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          prefetch={
+                            item.href === PROBAR_DISENO_PATH ? false : undefined
+                          }
+                          aria-current={active ? 'page' : undefined}
+                          onClick={() => setMenuOpen(false)}
+                          className={rowClass}
+                        >
+                          <span
+                            className={
+                              'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ' +
+                              (active
+                                ? isDark
+                                  ? 'bg-white/15 text-white'
+                                  : 'bg-neutral-900 text-white'
+                                : isDark
+                                  ? 'bg-white/8 text-neutral-200'
+                                  : 'bg-neutral-100 text-neutral-700')
+                            }
+                          >
+                            <NavItemIcon name={item.icon} />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-semibold">
+                              {item.label}
+                            </span>
+                          </span>
+                          <svg
+                            viewBox="0 0 24 24"
+                            className={
+                              'h-4 w-4 shrink-0 opacity-40 ' +
+                              (isDark ? 'text-white' : 'text-neutral-900')
+                            }
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            aria-hidden
+                          >
+                            <path
+                              d="M9 6l6 6-6 6"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+
+                {isEditor ? (
+                  <div
+                    className={
+                      'border-t p-3 ' +
+                      (isDark ? 'border-neutral-600/60' : 'border-neutral-100')
+                    }
+                  >
+                    <Link
+                      href="/comprar"
+                      className={
+                        'flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl text-sm font-bold transition ' +
+                        (isDark
+                          ? 'bg-white text-neutral-900 hover:bg-neutral-100'
+                          : 'bg-neutral-900 text-white hover:bg-neutral-800')
+                      }
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Guardar pedido
+                    </Link>
+                  </div>
+                ) : null}
+              </nav>
+            </div>,
+            document.body,
+          )
+        : null}
     </header>
   )
 }

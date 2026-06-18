@@ -53,7 +53,7 @@ export const PANEL_TITLES: Record<EditorPanelId, string> = {
 
   layers: 'Capas',
 
-  garment: 'Prenda',
+  garment: 'Color de la prenda',
 
 }
 

@@ -77,7 +77,7 @@ const ITEMS: {
   },
   {
     id: 'garment',
-    label: 'Prenda',
+    label: 'Color',
     Icon: ({ active }) => (
       <svg
         viewBox="0 0 24 24"

@@ -3,25 +3,22 @@ import { MOCKUP_PRINT_AREAS } from './mockup-assets'
 export const PRODUCTS = {
   'camiseta-unisex': {
     slug: 'camiseta-unisex',
-    name: 'Camiseta unisex',
-    description:
-      'Prenda ligera unisex para volumen y eventos. Estampado DTF con colores vivos y buen detalle.',
+    name: 'Camiseta básica',
+    description: 'Prenda ligera unisex. Personaliza frente y espalda.',
     price: 32000,
     type: 'TSHIRT' as const,
   },
   'hoodie-unisex': {
     slug: 'hoodie-unisex',
-    name: 'Hoodie unisex',
-    description:
-      'Hoodie clásico con capucha: ideal para diseños en pecho y espalda. Punto medio en precio y presencia.',
+    name: 'Suéter básico',
+    description: 'Suéter unisex con capucha. Personaliza frente y espalda.',
     price: 48000,
     type: 'HOODIE' as const,
   },
   'crewneck-unisex': {
     slug: 'crewneck-unisex',
-    name: 'Crewneck unisex',
-    description:
-      'Nivel premium: algodón de mayor gramaje y corte oversize. Más estructura que un hoodie básico — por eso el precio es mayor.',
+    name: 'Suéter básico',
+    description: 'Suéter unisex de algodón. Personaliza frente y espalda.',
     price: 55000,
     type: 'CREWNECK' as const,
   },
@@ -44,6 +41,7 @@ export const PRODUCT_COLORS = [
   { label: 'Blanco', value: 'WHITE', hex: '#ffffff' },
   { label: 'Beige', value: 'BEIGE', hex: '#d9c4a0' },
   { label: 'Gris jaspe', value: 'HEATHER_GRAY', hex: '#8a8f98' },
+  { label: 'Azul', value: 'BLUE', hex: '#1e40af' },
 ] as const
 
 export const PRODUCT_SIZES = ['S', 'M', 'L', 'XL', 'XXL'] as const
@@ -74,6 +72,15 @@ export type PrintZoneValue = (typeof PRINT_ZONES)[number]['value']
 
 export const getProductColorLabel = (value: ProductColorValue) =>
   PRODUCT_COLORS.find((item) => item.value === value)?.label ?? value
+
+export function parseProductColorParam(
+  value: string | null | undefined,
+): ProductColorValue | null {
+  if (!value) return null
+  return PRODUCT_COLORS.some((item) => item.value === value)
+    ? (value as ProductColorValue)
+    : null
+}
 
 export const getPrintZone = (value: PrintZoneValue) =>
   PRINT_ZONES.find((item) => item.value === value)
