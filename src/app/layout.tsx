@@ -2,9 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { SiteFooter } from '../components/layout/site-footer'
 import { SiteHeader } from '../components/layout/site-header'
+import { ClientLayoutExtras } from '../components/layout/client-layout-extras'
 import { AppStateProvider } from '../components/app-state/app-state-provider'
-import { WebVitalsReporter } from '../components/analytics/web-vitals'
-import { WhatsAppHelpFab } from '../components/layout/whatsapp-help-fab'
 
 export const metadata: Metadata = {
   title: {
@@ -25,11 +24,10 @@ export default function RootLayout({
     <html lang="es">
       <body className="flex min-h-dvh flex-col">
         <AppStateProvider>
-          <WebVitalsReporter />
+          <ClientLayoutExtras />
           <SiteHeader />
           <main className="flex min-h-0 flex-1 flex-col">{children}</main>
           <SiteFooter />
-          <WhatsAppHelpFab />
         </AppStateProvider>
       </body>
     </html>

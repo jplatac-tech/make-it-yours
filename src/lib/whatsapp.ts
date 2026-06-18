@@ -16,6 +16,8 @@ import {
   parseStoredDesign,
 } from './design-storage'
 import { getZonesWithDesign, parseDesignPayload } from './export-design'
+import { getDesignLabel, getDesignRefId } from './design-ids'
+import { formatPrice } from './utils'
 
 function digitsOnly(phone: string) {
   return phone.replace(/\D/g, '')
@@ -28,6 +30,12 @@ export function getStoreWhatsAppDigits() {
 export function buildWhatsAppUrl(message: string, phone = getStoreWhatsAppDigits()) {
   const encoded = encodeURIComponent(message)
   return `https://wa.me/${phone}?text=${encoded}`
+}
+
+/** Abre el chat de la tienda (mismo número que navbar, FAB y carrito). */
+export function openStoreWhatsApp(message: string) {
+  if (typeof window === 'undefined') return
+  window.location.assign(buildWhatsAppUrl(message))
 }
 
 function getProductNameFromDesign(designJson: string | null): string | null {
@@ -43,7 +51,7 @@ export function formatDesignSummaryLines(designJson: string | null): string[] {
 
   if (lineItems.length > 1) {
     const lines = ['', `— ${lineItems.length} diseños guardados en la web —`]
-    lineItems.forEach((item, index) => {
+    lineItems.forEach((item) => {
       const name =
         item.productSlug in PRODUCTS
           ? PRODUCTS[item.productSlug as ProductSlug].name
@@ -51,7 +59,7 @@ export function formatDesignSummaryLines(designJson: string | null): string[] {
       const front = item.shapesByZone.FRONT?.length ?? 0
       const back = item.shapesByZone.BACK?.length ?? 0
       lines.push(
-        `${index + 1}. ${name} · ${getProductColorLabel(item.productColor)} · Frente: ${front} · Espalda: ${back}`,
+        `${getDesignRefId(item.id)} · ${name} · ${getProductColorLabel(item.productColor)} · Frente: ${front} · Espalda: ${back}`,
       )
     })
     lines.push('Puedo enviar capturas desde el editor si lo necesitan.')
@@ -81,6 +89,10 @@ export function formatDesignSummaryLines(designJson: string | null): string[] {
     '',
     '— Diseño guardado en la web —',
   ]
+  const singleItem = lineItems[0]
+  if (singleItem) {
+    lines.push(`ID diseño: ${getDesignRefId(singleItem.id)}`)
+  }
   if (productName) lines.push(`Prenda del diseño: ${productName}`)
   lines.push(
     `Color: ${colorLabel}`,
@@ -108,10 +120,10 @@ export function formatCartWhatsAppMessage(
     const size = item.size ? ` · Talla ${item.size}` : ''
     const subtotal = item.price * item.quantity
     lines.push(
-      `${index + 1}. ${item.name}${size} — ${item.quantity} u. — $${subtotal}`,
+      `${index + 1}. ${item.name}${size} — ${item.quantity} u. — ${formatPrice(subtotal)}`,
     )
   })
-  lines.push('', `Total estimado (catálogo): $${totalPrice}`)
+  lines.push('', `Total estimado (catálogo): ${formatPrice(totalPrice)}`)
 
   if (designJson && hasDesignElements(designJson)) {
     lines.push(...formatDesignSummaryLines(designJson))
@@ -137,7 +149,7 @@ export function formatDesignQuoteMessage(
       '',
       `${lineItems.length} prendas distintas en el editor:`,
     ]
-    lineItems.forEach((item, index) => {
+    lineItems.forEach((item) => {
       const json = lineItemToDesignJson(item)
       const payload = parseDesignPayload(json)
       const name =
@@ -152,7 +164,7 @@ export function formatDesignQuoteMessage(
       const back = item.shapesByZone.BACK?.length ?? 0
       lines.push(
         '',
-        `${index + 1}. ${name} · ${color}`,
+        `${getDesignLabel(item.id)} · ${name} · ${color}`,
         `   Zonas: ${zones || '—'} · Frente: ${front} elem. · Espalda: ${back} elem.`,
       )
     })
@@ -185,9 +197,15 @@ export function formatDesignQuoteMessage(
     backCount = parsed.shapesByZone?.BACK?.length ?? 0
   }
 
+  const singleItem = lineItems[0]
+  const designRefLine = singleItem
+    ? `ID diseño: ${getDesignRefId(singleItem.id)}`
+    : null
+
   return [
     '¡Hola! Quiero cotizar un diseño personalizado:',
     '',
+    ...(designRefLine ? [designRefLine, ''] : []),
     `Prenda: ${resolvedName}`,
     `Color: ${colorLabel}`,
     `Vista activa al guardar: ${zoneLabel}`,
@@ -202,4 +220,62 @@ export function formatQuickQuoteMessage(productName?: string): string {
     return `¡Hola! Me interesa cotizar: ${productName}. ¿Tienen disponibilidad y tiempos de entrega?`
   }
   return '¡Hola! Me interesa personalizar una prenda con estampado. ¿Me pueden cotizar?'
+}
+
+export function formatPurchaseQuoteMessage(opts: {
+  designJson: string
+  productSize: string
+  quantityDesired: number
+  comments?: string
+  quoteId?: string
+  productName?: string
+}): string {
+  const base = formatDesignQuoteMessage(opts.designJson, opts.productName)
+  const lines = [
+    base,
+    '',
+    '— Datos del pedido —',
+    `Talla: ${opts.productSize}`,
+    `Cantidad: ${opts.quantityDesired}`,
+  ]
+  if (opts.comments?.trim()) {
+    lines.push(`Comentarios: ${opts.comments.trim()}`)
+  }
+  if (opts.quoteId) {
+    lines.push(`Referencia web: ${opts.quoteId}`)
+  }
+  lines.push('', '¿Me confirman precio final y tiempos de entrega?')
+  return lines.join('\n')
+}
+
+export function formatQuoteDeliveryWhatsAppMessage(opts: {
+  quoteId: string
+  customerName: string
+  customerWhatsapp: string
+  customerEmail?: string
+  neededBy?: string
+  deliveryNotes?: string
+}): string {
+  const lines = [
+    '¡Hola! Completé mi pedido con diseño en Make It Yours:',
+    '',
+    `Nombre: ${opts.customerName.trim()}`,
+    `Mi WhatsApp: ${opts.customerWhatsapp.trim()}`,
+  ]
+  if (opts.customerEmail?.trim()) {
+    lines.push(`Correo: ${opts.customerEmail.trim()}`)
+  }
+  if (opts.neededBy?.trim()) {
+    lines.push(`Fecha deseada: ${opts.neededBy.trim()}`)
+  }
+  if (opts.deliveryNotes?.trim()) {
+    lines.push(`Entrega: ${opts.deliveryNotes.trim()}`)
+  }
+  lines.push(`Referencia web: ${opts.quoteId}`)
+  lines.push('', 'Quedo atento a la cotización. ¡Gracias!')
+  return lines.join('\n')
+}
+
+export function formatOrderSentWhatsAppMessage(): string {
+  return '¡Hola! Acabo de enviar mi diseño desde Make It Yours. ¿Me pueden confirmar la cotización y los siguientes pasos?'
 }

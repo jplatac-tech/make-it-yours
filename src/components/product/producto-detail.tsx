@@ -13,6 +13,7 @@ import {
 } from '../../lib/catalog-looks'
 import { CATALOG_PRODUCT_META } from '../../lib/product-catalog'
 import { PRODUCT_SIZES, type ProductSlug } from '../../lib/products'
+import { formatPrice } from '../../lib/utils'
 
 type Product = {
   slug: ProductSlug
@@ -21,8 +22,6 @@ type Product = {
   price: number
   type: string
 }
-
-const formatPrice = (value: number) => `$${value.toFixed(0)}`
 
 export function ProductoDetail({
   product,

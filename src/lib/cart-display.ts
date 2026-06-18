@@ -1,9 +1,10 @@
 import type { ProductSlug } from './products'
 import { PRODUCTS } from './products'
 import { getCrewneckMockupSrc } from './mockup-assets'
+import { formatPrice } from './utils'
 
 export function formatCartPrice(value: number): string {
-  return `$ ${Math.round(value).toLocaleString('es-CO')}`
+  return formatPrice(value)
 }
 
 export function getCartProductBrand(slug: ProductSlug): string {

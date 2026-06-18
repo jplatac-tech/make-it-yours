@@ -23,9 +23,11 @@ export function WhatsAppIcon({ className }: { className?: string }) {
 export function WhatsAppHelpFab() {
   const pathname = usePathname()
   const isMobile = useMediaQuery('(max-width: 1023px)')
+  const isEditor =
+    pathname === '/disenar/editor' || pathname.startsWith('/disenar/')
 
   if (pathname.startsWith('/admin')) return null
-  if (isMobile) return null
+  if (isMobile || isEditor) return null
 
   const href = buildWhatsAppUrl(HELP_WHATSAPP_MESSAGE)
   const label = '¿Tienes dudas? Escríbenos por WhatsApp'

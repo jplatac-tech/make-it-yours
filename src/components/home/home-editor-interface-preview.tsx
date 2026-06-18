@@ -187,6 +187,7 @@ export function HomeEditorInterfacePreview() {
                 alt=""
                 fill
                 sizes="160px"
+                loading="lazy"
                 className="object-contain object-center"
               />
               <div className="absolute inset-0 flex items-center justify-center p-[18%]">

@@ -87,30 +87,19 @@ export default function ComprarPage() {
         <h1 className="mt-3 text-2xl font-semibold text-neutral-950 sm:text-3xl">
           Enviar diseño para cotizar
         </h1>
-        <p className="mt-3 text-neutral-600">
-          {isMulti
-            ? `Tienes ${lineItemsWithDesign.length} prendas con diseños distintos desde el editor. Indica talla y cantidad total.`
-            : 'El color y las caras con diseño vienen del editor. Aquí solo indicas talla y cantidad.'}{' '}
-          Puedes{' '}
-          <Link
-            href={buildEditorPath({ product: product.slug })}
-            className="font-medium text-sky-700 underline"
-          >
-            volver al editor
-          </Link>{' '}
-          para ajustar el diseño.
-        </p>
 
-        {isMulti ? (
-          <MultiDesignOrderPreview designJson={designJson} />
-        ) : (
-          <DesignOrderPreview
-            designJson={designJson}
-            productName={product.name}
-          />
-        )}
+        <div className="mt-8 sm:mt-10">
+          {isMulti ? (
+            <MultiDesignOrderPreview designJson={designJson} />
+          ) : (
+            <DesignOrderPreview
+              designJson={designJson}
+              productName={product.name}
+            />
+          )}
+        </div>
 
-        <div className="card p-6">
+        <div className="card mt-8 p-6 sm:mt-10">
           <PurchaseForm designJson={designJson} />
         </div>
       </div>

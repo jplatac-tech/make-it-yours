@@ -33,6 +33,7 @@ import {
   sessionToStorageJson,
   type DesignLineItem,
 } from '../../lib/design-line-items'
+import { getDesignLabel, getDesignRefId } from '../../lib/design-ids'
 import { GarmentSlotStrip } from './garment-slot-strip'
 import { CrewneckMockup } from '../product/crewneck-mockup'
 import { MockupDesignLayer } from './mockup-design-layer'
@@ -372,6 +373,64 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
 
   const [garmentNotice, setGarmentNotice] = useState<string | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [garmentRemoveId, setGarmentRemoveId] = useState<string | null>(null)
+
+  const removeGarment = useCallback(
+    (targetId: string) => {
+      if (lineItemsRef.current.length <= 1) return
+
+      const active = snapshotActiveLineItem(
+        shapesRef.current,
+        printZoneRef.current,
+        productColor,
+        productSlug,
+      )
+      const synced = lineItemsRef.current.map((item) =>
+        item.id === active.id ? active : item,
+      )
+      const removeIndex = synced.findIndex((item) => item.id === targetId)
+      if (removeIndex < 0) return
+
+      const nextItems = synced.filter((item) => item.id !== targetId)
+      const removingActive = targetId === activeItemIdRef.current
+      let nextActiveId = activeItemIdRef.current
+
+      if (removingActive) {
+        const fallback =
+          nextItems[Math.min(removeIndex, nextItems.length - 1)] ?? nextItems[0]
+        nextActiveId = fallback.id
+        setActiveItemId(nextActiveId)
+        activeItemIdRef.current = nextActiveId
+        applyLineItemToEditor(fallback)
+      }
+
+      setLineItems(nextItems)
+      saveSessionItems(nextItems, nextActiveId)
+      setGarmentNotice('Prenda eliminada del pedido.')
+      window.setTimeout(() => setGarmentNotice(null), 3500)
+    },
+    [
+      applyLineItemToEditor,
+      productColor,
+      productSlug,
+      saveSessionItems,
+      snapshotActiveLineItem,
+    ],
+  )
+
+  const requestRemoveGarment = useCallback(
+    (targetId: string) => {
+      if (lineItemsRef.current.length <= 1) return
+      const item = lineItemsRef.current.find((row) => row.id === targetId)
+      if (!item) return
+      if (lineItemHasDesign(item)) {
+        setGarmentRemoveId(targetId)
+        return
+      }
+      removeGarment(targetId)
+    },
+    [removeGarment],
+  )
 
   const addGarment = useCallback(
     (color: ProductColorValue = 'WHITE') => {
@@ -397,7 +456,7 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
       applyLineItemToEditor(newItem)
       const label = PRODUCT_COLORS.find((c) => c.value === color)?.label ?? color
       setGarmentNotice(
-        `Prenda ${nextItems.length} añadida · ${label}. Diseña en el mockup.`,
+        `${getDesignLabel(newItem.id)} añadido · ${label}. Diseña en el mockup.`,
       )
       window.setTimeout(() => setGarmentNotice(null), 4000)
     },
@@ -412,10 +471,11 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
 
   const garmentSlots = useMemo(
     () =>
-      lineItems.map((item, index) => ({
+      lineItems.map((item) => ({
         id: item.id,
         color: item.productColor,
-        label: `Prenda ${index + 1}`,
+        label: getDesignLabel(item.id),
+        refId: getDesignRefId(item.id),
         hasDesign: lineItemHasDesign(item),
       })),
     [lineItems],
@@ -1104,6 +1164,19 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
       onConfirm={confirmRemoveSelected}
       onCancel={() => setDeleteConfirmOpen(false)}
     />
+    <ConfirmModal
+      open={garmentRemoveId !== null}
+      title="Quitar prenda"
+      description="Esta prenda tiene diseño. ¿Eliminarla del pedido? Se perderá su diseño."
+      confirmLabel="Quitar prenda"
+      cancelLabel="Cancelar"
+      tone="danger"
+      onConfirm={() => {
+        if (garmentRemoveId) removeGarment(garmentRemoveId)
+        setGarmentRemoveId(null)
+      }}
+      onCancel={() => setGarmentRemoveId(null)}
+    />
     <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#eef0f4] lg:h-full lg:min-h-0 lg:flex-row">
       <div className="hidden h-full min-h-0 shrink-0 overflow-hidden lg:flex">
       <EditorPanel
@@ -1164,6 +1237,7 @@ export function DesignStudio({ searchParams }: DesignStudioProps) {
               activeId={activeItemId}
               onSelect={switchGarment}
               onAdd={addGarment}
+              onRemove={requestRemoveGarment}
             />
             {garmentNotice ? (
               <div

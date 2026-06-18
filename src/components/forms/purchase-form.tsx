@@ -1,15 +1,16 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import { trackEvent } from '../../lib/analytics'
 import { buildEditorPath } from '../../lib/editor-url'
-import { submitQuoteRequest } from '../../server/actions/quote-actions'
 import {
-  buildDesignExports,
+  formatPurchaseQuoteMessage,
+  openStoreWhatsApp,
+} from '../../lib/whatsapp'
+import {
   getZonesWithDesign,
   parseDesignPayload,
 } from '../../lib/export-design'
@@ -18,7 +19,7 @@ import {
   lineItemToDesignJson,
   parseEditorSession,
 } from '../../lib/design-storage'
-import type { DesignLineItem } from '../../lib/design-line-items'
+import { getDesignLabel, getDesignRefId } from '../../lib/design-ids'
 import {
   DEFAULT_PRODUCT_SIZE,
   getPrintZone,
@@ -28,67 +29,12 @@ import {
   normalizePrintZone,
   type ProductColorValue,
   type ProductSizeValue,
-  type PrintZoneValue,
   type ProductSlug,
 } from '../../lib/products'
-import type { QuoteLineItemInput } from '../../lib/validations/quote'
 
 type Props = {
   /** JSON completo de la sesión del editor (v2) o diseño legacy */
   designJson: string
-}
-
-function appendExportsToLineInput(
-  input: QuoteLineItemInput,
-  exports: Awaited<ReturnType<typeof buildDesignExports>>,
-): QuoteLineItemInput {
-  const next = { ...input }
-  if (exports.mockupDataUrl) next.mockupDataUrl = exports.mockupDataUrl
-  if (exports.technicalDataUrl) next.technicalDataUrl = exports.technicalDataUrl
-  for (const zone of exports.zonesWithDesign) {
-    const zoneExport = exports.byZone[zone]
-    if (zoneExport?.mockupDataUrl) {
-      next[`mockupDataUrl_${zone}` as keyof QuoteLineItemInput] =
-        zoneExport.mockupDataUrl as never
-    }
-    if (zoneExport?.technicalDataUrl) {
-      next[`technicalDataUrl_${zone}` as keyof QuoteLineItemInput] =
-        zoneExport.technicalDataUrl as never
-    }
-  }
-  return next
-}
-
-async function buildLineItemInput(
-  item: DesignLineItem,
-  productSize: ProductSizeValue,
-): Promise<QuoteLineItemInput> {
-  const json = lineItemToDesignJson(item)
-  const design = parseDesignPayload(json)
-  const zonesWithDesign = getZonesWithDesign(design)
-  const primaryPrintZone: PrintZoneValue =
-    zonesWithDesign[0] ?? normalizePrintZone(item.printZone)
-  const primaryZoneMeta =
-    getPrintZone(primaryPrintZone) ?? getPrintZone('FRONT')!
-
-  let lineInput: QuoteLineItemInput = {
-    productSlug: item.productSlug,
-    productColor: item.productColor,
-    productSize: item.productSize ?? productSize,
-    printZone: primaryPrintZone,
-    designJson: json,
-    finalWidthIn: primaryZoneMeta.widthIn,
-    finalHeightIn: primaryZoneMeta.heightIn,
-  }
-
-  try {
-    const exports = await buildDesignExports(json)
-    lineInput = appendExportsToLineInput(lineInput, exports)
-  } catch {
-    /* continúa sin export si falla en cliente */
-  }
-
-  return lineInput
 }
 
 export function PurchaseForm({ designJson }: Props) {
@@ -116,11 +62,10 @@ export function PurchaseForm({ designJson }: Props) {
   )
   const [pending, setPending] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
-  const router = useRouter()
 
   const editorSummary = useMemo(() => {
     if (isMulti) {
-      return lineItems.map((item, index) => {
+      return lineItems.map((item) => {
         const zones = getZonesWithDesign(parseDesignPayload(lineItemToDesignJson(item)))
         const zoneSummary = zones
           .map((z) => getPrintZone(z)?.label ?? z)
@@ -131,7 +76,8 @@ export function PurchaseForm({ designJson }: Props) {
             : productName
         return {
           key: item.id,
-          title: `Prenda ${index + 1}`,
+          title: getDesignLabel(item.id),
+          refId: getDesignRefId(item.id),
           name,
           color: getProductColorLabel(item.productColor),
           zones: zoneSummary,
@@ -146,10 +92,14 @@ export function PurchaseForm({ designJson }: Props) {
       .map((z) => getPrintZone(z)?.label ?? z)
       .join(' y ')
 
+    const active = lineItems[0]
+    const designRef = active ? getDesignRefId(active.id) : null
+
     return [
       {
         key: 'single',
-        title: 'Del editor',
+        title: active ? getDesignLabel(active.id) : 'Del editor',
+        refId: designRef,
         name: productName,
         color: getProductColorLabel(productColor),
         zones: zoneSummary,
@@ -157,94 +107,46 @@ export function PurchaseForm({ designJson }: Props) {
     ]
   }, [isMulti, lineItems, legacyDesign, productName])
 
-  async function handleSubmit(formData: FormData) {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     setPending(true)
     setMessage(null)
 
-    try {
-      if (isMulti) {
-        const built = await Promise.all(
-          lineItems.map((item) => buildLineItemInput(item, productSize)),
-        )
-        formData.set('designItemsJson', JSON.stringify(built))
+    const formData = new FormData(event.currentTarget)
+    const quantityRaw = formData.get('quantityDesired')
+    const quantityDesired = Math.max(
+      1,
+      Number.parseInt(String(quantityRaw ?? '1'), 10) || 1,
+    )
 
-        const extra = `${lineItems.length} prendas con diseños distintos`
-        const existing = String(formData.get('comments') ?? '').trim()
-        formData.set(
-          'comments',
-          existing ? `${existing}\n${extra}` : extra,
-        )
-      } else {
-        const item = lineItems[0]
-        if (!item) {
-          setMessage('No hay diseño para enviar')
-          setPending(false)
-          return
-        }
-
-        const lineInput = await buildLineItemInput(item, productSize)
-        const design = parseDesignPayload(lineInput.designJson)
-        const zonesWithDesign = getZonesWithDesign(design)
-        const zoneSummary = zonesWithDesign
-          .map((z) => getPrintZone(z)?.label ?? z)
-          .join(' y ')
-
-        formData.set('productSlug', lineInput.productSlug)
-        formData.set('productColor', lineInput.productColor)
-        formData.set('productSize', lineInput.productSize)
-        formData.set('printZone', lineInput.printZone)
-        formData.set('designJson', lineInput.designJson)
-        formData.set('finalWidthIn', String(lineInput.finalWidthIn))
-        formData.set('finalHeightIn', String(lineInput.finalHeightIn))
-
-        if (lineInput.mockupDataUrl) {
-          formData.set('mockupDataUrl', lineInput.mockupDataUrl)
-        }
-        if (lineInput.technicalDataUrl) {
-          formData.set('technicalDataUrl', lineInput.technicalDataUrl)
-        }
-        for (const key of Object.keys(lineInput) as Array<keyof QuoteLineItemInput>) {
-          if (key.startsWith('mockupDataUrl_') || key.startsWith('technicalDataUrl_')) {
-            const val = lineInput[key]
-            if (typeof val === 'string' && val) {
-              formData.set(key, val)
-            }
-          }
-        }
-
-        if (zonesWithDesign.length > 1) {
-          const extra = `Zonas con diseño: ${zoneSummary}`
-          const existing = String(formData.get('comments') ?? '').trim()
-          formData.set(
-            'comments',
-            existing ? `${existing}\n${extra}` : extra,
-          )
-        }
-      }
-    } catch {
-      setMessage('No se pudieron generar los archivos del diseño')
+    if (isMulti && quantityDesired < lineItems.length) {
+      setMessage(`La cantidad mínima es ${lineItems.length} prendas`)
       setPending(false)
       return
     }
 
-    const result = await submitQuoteRequest(formData)
+    const comments = String(formData.get('comments') ?? '').trim()
 
-    if (result.success && result.quoteId) {
-      trackEvent('quote_submitted', {
-        productSlug: singleSlug,
-        quoteId: result.quoteId,
-        garmentCount: lineItems.length,
-      })
-      router.push(`/comprar/entrega?quoteId=${result.quoteId}`)
-    } else {
-      setMessage(result.message)
-    }
+    trackEvent('quote_submitted', {
+      productSlug: singleSlug,
+      garmentCount: lineItems.length,
+    })
+
+    openStoreWhatsApp(
+      formatPurchaseQuoteMessage({
+        designJson,
+        productSize,
+        quantityDesired,
+        comments: comments || undefined,
+        productName,
+      }),
+    )
 
     setPending(false)
   }
 
   return (
-    <form action={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
         <p className="font-medium text-neutral-900">
           {isMulti
@@ -258,6 +160,10 @@ export function PurchaseForm({ designJson }: Props) {
                 <p className="text-xs font-semibold tracking-wide text-neutral-500 uppercase">
                   {row.title}
                 </p>
+              ) : row.refId ? (
+                <p className="text-xs font-semibold tracking-wide text-violet-700 uppercase">
+                  {row.refId}
+                </p>
               ) : null}
               <p>
                 {isMulti ? 'Prenda' : 'Producto'}:{' '}
@@ -266,7 +172,7 @@ export function PurchaseForm({ designJson }: Props) {
               <p>
                 Color: <span className="text-neutral-900">{row.color}</span>
               </p>
-              {row.zones ? (
+              {isMulti && row.zones ? (
                 <p>
                   Zona{row.zones.includes(' y ') ? 's' : ''}:{' '}
                   <span className="text-neutral-900">{row.zones || '—'}</span>
@@ -324,6 +230,7 @@ export function PurchaseForm({ designJson }: Props) {
         name="quantityDesired"
         type="number"
         min={isMulti ? lineItems.length : 1}
+        defaultValue={1}
         placeholder={
           isMulti
             ? `Cantidad total (mín. ${lineItems.length})`
@@ -336,18 +243,12 @@ export function PurchaseForm({ designJson }: Props) {
         placeholder="Comentarios para la cotización (opcional)"
       />
 
-      <p className="text-xs text-neutral-500">
-        {isMulti
-          ? `Se registrarán ${lineItems.length} prendas, cada una con su color y diseño. Los datos de contacto se completan en el siguiente paso.`
-          : 'Al enviar se generan mockups y archivos técnicos de cada cara con diseño. Los datos de contacto se completan en el siguiente paso.'}
-      </p>
-
       <Button type="submit" className="w-full" disabled={pending}>
         {pending
-          ? 'Generando archivos...'
+          ? 'Abriendo WhatsApp...'
           : isMulti
-            ? `Enviar ${lineItems.length} prendas para cotizar`
-            : 'Enviar diseño para cotizar'}
+            ? `Cotizar ${lineItems.length} prendas por WhatsApp`
+            : 'Cotizar por WhatsApp'}
       </Button>
 
       {message ? <p className="text-sm text-red-600">{message}</p> : null}

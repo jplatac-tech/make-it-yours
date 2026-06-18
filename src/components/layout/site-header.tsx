@@ -194,6 +194,12 @@ function NikeStyleHeader({
                     <Link
                       key={item.href}
                       href={item.href}
+                      prefetch={
+                        item.href === EDITOR_PATH ||
+                        item.href === PROBAR_DISENO_PATH
+                          ? false
+                          : undefined
+                      }
                       aria-current={active ? 'page' : undefined}
                       className={active ? desktopLinkActive : desktopLinkClass}
                     >
@@ -232,9 +238,13 @@ function NikeStyleHeader({
               </Link>
             ) : null}
 
-            <div className="lg:hidden">
+            {isEditor ? (
               <WhatsAppNavButton wa={wa} isDark={isDark} />
-            </div>
+            ) : (
+              <div className="lg:hidden">
+                <WhatsAppNavButton wa={wa} isDark={isDark} />
+              </div>
+            )}
 
             <AccountHeaderTrigger isDark={isDark} />
 
@@ -314,6 +324,12 @@ function NikeStyleHeader({
                   <li key={item.href}>
                     <Link
                       href={item.href}
+                      prefetch={
+                        item.href === EDITOR_PATH ||
+                        item.href === PROBAR_DISENO_PATH
+                          ? false
+                          : undefined
+                      }
                       aria-current={active ? 'page' : undefined}
                       onClick={() => setMenuOpen(false)}
                       className={

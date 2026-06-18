@@ -3,22 +3,15 @@
 import { useMemo } from 'react'
 import { getZonesWithDesign, getShapesForZone } from '../../lib/export-design'
 import { resolveDesignPreviewPayload } from '../../lib/design-preview-payload'
-import {
-  getProductColorLabel,
-  getPrintZone,
-  PRODUCTS,
-  type ProductColorValue,
-  type PrintZoneValue,
-  type ProductSlug,
-} from '../../lib/products'
+import { getPrintZone, type ProductColorValue } from '../../lib/products'
 import { DesignPreviewMockup } from './design-preview-mockup'
 
 type Props = {
   designJson: string
-  productName: string
+  productName?: string
 }
 
-export function DesignOrderPreview({ designJson, productName }: Props) {
+export function DesignOrderPreview({ designJson }: Props) {
   const payload = useMemo(
     () => resolveDesignPreviewPayload(designJson),
     [designJson],
@@ -29,15 +22,6 @@ export function DesignOrderPreview({ designJson, productName }: Props) {
     () => getZonesWithDesign(payload),
     [payload],
   )
-  const slug = (payload as { productSlug?: string })?.productSlug as
-    | ProductSlug
-    | undefined
-  const catalogName =
-    slug && slug in PRODUCTS ? PRODUCTS[slug].name : productName
-
-  const zoneLabels = zonesWithDesign
-    .map((z) => getPrintZone(z)?.label ?? z)
-    .join(' · ')
 
   return (
     <div className="card mb-6 overflow-hidden p-4 sm:p-5">
@@ -87,23 +71,6 @@ export function DesignOrderPreview({ designJson, productName }: Props) {
           />
         </div>
       )}
-
-      <dl className="mt-5 grid gap-3 text-sm text-neutral-700 sm:grid-cols-2">
-        <div>
-          <dt className="font-medium text-neutral-900">Prenda</dt>
-          <dd>{catalogName}</dd>
-        </div>
-        <div>
-          <dt className="font-medium text-neutral-900">Color</dt>
-          <dd>{getProductColorLabel(productColor)}</dd>
-        </div>
-        {zonesWithDesign.length > 0 ? (
-          <div className="sm:col-span-2">
-            <dt className="font-medium text-neutral-900">Zonas con diseño</dt>
-            <dd>{zoneLabels}</dd>
-          </div>
-        ) : null}
-      </dl>
     </div>
   )
 }

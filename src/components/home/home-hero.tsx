@@ -1,7 +1,4 @@
-'use client'
-
 import Link from 'next/link'
-import { EDITOR_PATH, PROBAR_DISENO_PATH } from '../../lib/start-editor'
 import {
   buildHeroSrcSet,
   CATALOG_HERO_BLUR_IMAGE,
@@ -9,11 +6,16 @@ import {
   CATALOG_HERO_FOCUS_IMAGE,
   CATALOG_HERO_FOCUS_VARIANTS,
 } from '../../lib/catalog-looks'
+import { EDITOR_PATH, PROBAR_DISENO_PATH } from '../../lib/start-editor'
 
 const HERO_BLUR_SRCSET = buildHeroSrcSet(CATALOG_HERO_BLUR_VARIANTS, 'image/webp')
 const HERO_FOCUS_SRCSET = buildHeroSrcSet(CATALOG_HERO_FOCUS_VARIANTS, 'image/webp')
 
-/** Encuadre retrato completo — centro-inferior (como antes del recorte 16:9) */
+/** Tamaños responsivos — evita descargar 2560px en móvil */
+const HERO_SIZES =
+  '(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1920px'
+
+/** Encuadre retrato completo — centro-inferior */
 const heroImgBase =
   'absolute left-0 h-[132%] w-full max-w-none object-cover object-[center_62%] sm:object-[center_64%]'
 const heroImgFrame = heroImgBase + ' [transform:translate3d(0,-24%,0)_scale(1.04)]'
@@ -23,13 +25,12 @@ const heroImgBlur =
 export function HomeHero() {
   return (
     <section className="relative min-h-[min(calc(100svh-var(--header-height)),860px)] w-full overflow-hidden bg-neutral-950">
-      {/* Capa 1: fondo muy suave */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={CATALOG_HERO_BLUR_IMAGE}
           srcSet={HERO_BLUR_SRCSET || undefined}
-          sizes="100vw"
+          sizes={HERO_SIZES}
           alt=""
           fetchPriority="high"
           decoding="async"
@@ -37,20 +38,19 @@ export function HomeHero() {
         />
       </div>
 
-      {/* Capa 2: foco en sujetos (centro-bajo) */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={CATALOG_HERO_FOCUS_IMAGE}
           srcSet={HERO_FOCUS_SRCSET || undefined}
-          sizes="100vw"
+          sizes={HERO_SIZES}
           alt="Colección Make It Yours — streetwear personalizable"
+          loading="lazy"
           decoding="async"
           className={heroImgFrame}
         />
       </div>
 
-      {/* Atmósfera */}
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_55%,transparent_0%,rgba(0,0,0,0.35)_100%)]"
         aria-hidden
@@ -64,7 +64,6 @@ export function HomeHero() {
         aria-hidden
       />
 
-      {/* Contenido */}
       <div className="absolute inset-0 z-10 flex flex-col justify-end">
         <div className="container pb-10 sm:pb-14 md:pb-16 lg:pb-20">
           <div className="max-w-xl motion-fade-in-up">
@@ -78,19 +77,21 @@ export function HomeHero() {
             </h1>
 
             <p className="motion-fade-in-up motion-delay-2 mt-3 max-w-sm text-sm leading-relaxed text-white/80 sm:mt-4 sm:text-[15px]">
-              Editor con mockup real, diseños en minutos y cotización sin presión
-              por WhatsApp.
+              Prendas personalizadas con vista previa en tiempo real. Diseña en
+              línea y solicita tu cotización por WhatsApp.
             </p>
 
             <div className="motion-fade-in-up motion-delay-3 mt-6 flex flex-col gap-2.5 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
               <Link
                 href={EDITOR_PATH}
+                prefetch={false}
                 className="btn-interactive inline-flex min-h-[44px] items-center justify-center rounded-full bg-white px-6 text-sm font-bold text-neutral-900 shadow-[0_4px_24px_rgba(0,0,0,0.25)] hover:bg-neutral-100 sm:min-h-[46px] sm:px-7"
               >
                 Ir al editor
               </Link>
               <Link
                 href={PROBAR_DISENO_PATH}
+                prefetch={false}
                 className="btn-interactive inline-flex min-h-[44px] items-center justify-center rounded-full border border-white/60 bg-white/10 px-5 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/20 sm:min-h-[46px] sm:px-6"
               >
                 Probar un diseño

@@ -38,6 +38,7 @@ export function CatalogLookCard({
             alt={product.name}
             fill
             sizes="(max-width: 640px) 92vw, (max-width: 1024px) 33vw, 300px"
+            loading="lazy"
             className="catalog-look-card__img"
           />
           <div className="catalog-look-card__shade" aria-hidden />

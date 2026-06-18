@@ -1,6 +1,13 @@
 import Link from 'next/link'
+import {
+  buildWhatsAppUrl,
+  formatOrderSentWhatsAppMessage,
+} from '../../../lib/whatsapp'
+import { STORE_WHATSAPP_DISPLAY } from '../../../lib/constants'
 
 export default function PedidoExitoPage() {
+  const whatsappHref = buildWhatsAppUrl(formatOrderSentWhatsAppMessage())
+
   return (
     <main className="container flex min-h-0 flex-1 items-center justify-center py-12 sm:py-16">
       <div className="card w-full max-w-2xl p-8 text-center">
@@ -11,10 +18,19 @@ export default function PedidoExitoPage() {
           Tu diseño fue enviado correctamente
         </h1>
         <p className="mt-4 text-neutral-600">
-          Revisaremos tu prenda y te contactaremos con los siguientes pasos.
+          Revisaremos tu prenda y te contactaremos con los siguientes pasos. Si
+          WhatsApp no se abrió solo, usa el botón de abajo ({STORE_WHATSAPP_DISPLAY}).
         </p>
 
-        <Link href="/" className="btn btn-primary mt-8 inline-flex">
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-primary mt-8 inline-flex"
+        >
+          Continuar por WhatsApp
+        </a>
+        <Link href="/" className="btn btn-secondary mt-4 inline-flex">
           Volver al inicio
         </Link>
         <p className="mt-4 text-sm text-neutral-600">

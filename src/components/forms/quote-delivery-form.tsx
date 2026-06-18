@@ -1,41 +1,61 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import { trackEvent } from '../../lib/analytics'
-import { submitQuoteDelivery } from '../../server/actions/quote-actions'
+import {
+  formatQuoteDeliveryWhatsAppMessage,
+  openStoreWhatsApp,
+} from '../../lib/whatsapp'
 
 type Props = {
-  quoteId: string
+  quoteId?: string
 }
 
 export function QuoteDeliveryForm({ quoteId }: Props) {
   const [pending, setPending] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
-  const router = useRouter()
 
-  async function handleSubmit(formData: FormData) {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     setPending(true)
     setMessage(null)
-    formData.set('quoteId', quoteId)
 
-    const result = await submitQuoteDelivery(formData)
+    const formData = new FormData(event.currentTarget)
+    const customerName = String(formData.get('customerName') ?? '').trim()
+    const customerWhatsapp = String(formData.get('customerWhatsapp') ?? '').trim()
 
-    if (result.success) {
-      trackEvent('quote_delivery_saved', { quoteId })
-      router.push('/pedido/exito')
-    } else {
-      setMessage(result.message)
+    if (customerName.length < 2) {
+      setMessage('Indica tu nombre')
+      setPending(false)
+      return
     }
+    if (customerWhatsapp.length < 8) {
+      setMessage('Indica un WhatsApp válido')
+      setPending(false)
+      return
+    }
+
+    trackEvent('quote_delivery_saved', { quoteId: quoteId ?? 'local' })
+
+    openStoreWhatsApp(
+      formatQuoteDeliveryWhatsAppMessage({
+        quoteId: quoteId ?? 'pedido-local',
+        customerName,
+        customerWhatsapp,
+        customerEmail: String(formData.get('customerEmail') ?? '') || undefined,
+        neededBy: String(formData.get('neededBy') ?? '') || undefined,
+        deliveryNotes: String(formData.get('deliveryNotes') ?? '') || undefined,
+      }),
+    )
 
     setPending(false)
   }
 
   return (
-    <form action={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <Input
         name="customerName"
         placeholder="Nombre completo"
@@ -60,7 +80,7 @@ export function QuoteDeliveryForm({ quoteId }: Props) {
       />
 
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? 'Guardando...' : 'Guardar datos de entrega'}
+        {pending ? 'Abriendo WhatsApp...' : 'Enviar datos por WhatsApp'}
       </Button>
 
       {message ? <p className="text-sm text-red-600">{message}</p> : null}

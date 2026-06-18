@@ -14,6 +14,7 @@ import {
   getPrintZone,
   PRODUCTS,
 } from '../../lib/products'
+import { getDesignLabel, getDesignRefId } from '../../lib/design-ids'
 import { DesignPreviewMockup } from './design-preview-mockup'
 
 type Props = {
@@ -39,7 +40,7 @@ export function MultiDesignOrderPreview({ designJson }: Props) {
         </p>
       </div>
 
-      {items.map((item, index) => {
+      {items.map((item) => {
         const zonesWithDesign = getLineItemZonesWithDesign(item)
         const productName =
           item.productSlug in PRODUCTS
@@ -52,7 +53,10 @@ export function MultiDesignOrderPreview({ designJson }: Props) {
             className="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-4"
           >
             <p className="text-sm font-semibold text-neutral-900">
-              Prenda {index + 1} · {productName}
+              {getDesignLabel(item.id)} · {productName}
+            </p>
+            <p className="mt-0.5 text-xs font-medium text-violet-700">
+              {getDesignRefId(item.id)}
             </p>
             <p className="mt-0.5 text-xs text-neutral-600">
               Color: {getProductColorLabel(item.productColor)}

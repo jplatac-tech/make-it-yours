@@ -12,6 +12,8 @@ export type GarmentSlotView = {
   id: string
   color: ProductColorValue
   label: string
+  /** ID corto visible (ej. MIY-A1B2C3D4) */
+  refId?: string
   hasDesign: boolean
 }
 
@@ -21,6 +23,7 @@ type Props = {
   onSelect: (id: string) => void
   /** El usuario elige el color de la prenda nueva */
   onAdd: (color: ProductColorValue) => void
+  onRemove?: (id: string) => void
   maxItems?: number
 }
 
@@ -29,12 +32,14 @@ export function GarmentSlotStrip({
   activeId,
   onSelect,
   onAdd,
+  onRemove,
   maxItems = 6,
 }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pendingColor, setPendingColor] = useState<ProductColorValue>('WHITE')
   const rootRef = useRef<HTMLDivElement>(null)
   const canAdd = items.length < maxItems
+  const canRemove = items.length > 1 && onRemove
 
   useEffect(() => {
     if (!pickerOpen) return
@@ -75,39 +80,62 @@ export function GarmentSlotStrip({
             const hex = GARMENT_COLOR_HEX[item.color].fill
             const isActive = item.id === activeId
             return (
-              <button
+              <div
                 key={item.id}
-                type="button"
-                title={`${item.label} · ${getProductColorLabel(item.color)}${item.hasDesign ? ' · con diseño' : ''}`}
-                onClick={() => onSelect(item.id)}
                 className={
-                  'group relative flex cursor-pointer flex-col items-center gap-1 rounded-xl px-2 py-1.5 transition active:scale-95 ' +
-                  (isActive ? 'bg-violet-50 ring-2 ring-violet-400' : 'hover:bg-neutral-50')
+                  'group/slot relative flex flex-col items-center ' +
+                  (isActive ? 'z-[1]' : '')
                 }
               >
-                <span
+                <button
+                  type="button"
+                  title={`${item.label} · ${getProductColorLabel(item.color)}${item.hasDesign ? ' · con diseño' : ''}`}
+                  onClick={() => onSelect(item.id)}
                   className={
-                    'flex h-10 w-10 items-center justify-center rounded-full border-2 bg-white shadow-sm ' +
-                    (isActive
-                      ? 'border-violet-600'
-                      : 'border-neutral-200 group-hover:border-violet-300')
+                    'relative flex cursor-pointer flex-col items-center gap-1 rounded-xl px-2 py-1.5 transition active:scale-95 ' +
+                    (isActive ? 'bg-violet-50 ring-2 ring-violet-400' : 'hover:bg-neutral-50')
                   }
                 >
                   <span
-                    className="h-7 w-7 rounded-full border border-neutral-200"
-                    style={{ backgroundColor: hex }}
-                  />
-                </span>
-                <span className="text-[10px] font-semibold text-neutral-700">
-                  {index + 1}
-                </span>
-                {item.hasDesign ? (
-                  <span
-                    className="absolute top-1 right-2 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white"
-                    aria-hidden
-                  />
+                    className={
+                      'flex h-10 w-10 items-center justify-center rounded-full border-2 bg-white shadow-sm ' +
+                      (isActive
+                        ? 'border-violet-600'
+                        : 'border-neutral-200 group-hover/slot:border-violet-300')
+                    }
+                  >
+                    <span
+                      className="h-7 w-7 rounded-full border border-neutral-200"
+                      style={{ backgroundColor: hex }}
+                    />
+                  </span>
+                  <span className="max-w-[4.5rem] truncate text-[9px] font-bold tracking-tight text-violet-800">
+                    {item.refId ?? item.label}
+                  </span>
+                  {item.hasDesign ? (
+                    <span
+                      className="absolute top-1 right-2 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white"
+                      aria-hidden
+                    />
+                  ) : null}
+                </button>
+                {canRemove ? (
+                  <button
+                    type="button"
+                    title="Quitar esta prenda"
+                    aria-label={`Quitar ${item.refId ?? item.label}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onRemove(item.id)
+                    }}
+                    className="absolute -top-1 -right-0.5 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-500 shadow-sm transition hover:border-red-300 hover:bg-red-50 hover:text-red-600 active:scale-95"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden>
+                      <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+                    </svg>
+                  </button>
                 ) : null}
-              </button>
+              </div>
             )
           })}
 

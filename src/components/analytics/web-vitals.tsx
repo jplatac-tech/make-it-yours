@@ -19,7 +19,9 @@ function sendMetric(metric: WebVitalMetric) {
     /* ignore metric send failures */
   })
 
-  console.info('Web Vitals:', metric)
+  if (process.env.NODE_ENV === 'development') {
+    console.info('Web Vitals:', metric)
+  }
 }
 
 function observeMetric(

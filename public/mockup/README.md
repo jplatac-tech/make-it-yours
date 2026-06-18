@@ -1,17 +1,20 @@
 # Mockups crewneck unisex
 
-Carpeta `unisex/` — **una imagen por color y por vista**:
+Fuente: carpeta `mockup editor/` en la raíz del proyecto.
 
-| Archivo | Uso |
-|---------|-----|
-| `pecho blanco.jpg` / `espalda blanco.jpg` en `gallery/presets/` | Blanco (oficial) |
-| `white-front.jpg` / `white-back.jpg` | Blanco (respaldo en `unisex/`) |
-| `black-front.jpg` / `black-back.jpg` | Negro |
-| `beige-front.jpg` / `beige-back.jpg` | Beige |
-| `gray-front.jpg` / `gray-back.jpg` | Gris jaspe |
+Sincronizar con:
 
-Reemplaza estos JPG por tus mockups profesionales (**mín. 1200–2000 px de ancho**, JPG calidad 90%+). Archivos muy pequeños (~10–25 KB) se verán borrosos al ampliar.
+```bash
+npm run sync-mockups
+```
 
-**Blanco:** `gallery/presets/pecho blanco.jpg` y `espalda blanco.jpg`.
+Archivos en `unisex/` (WebP):
 
-En el editor: **Frente / Espalda** cambia la vista; **Prenda** cambia el color y el mockup.
+| Archivo | Color | Vista |
+|---------|-------|-------|
+| `white-front.webp` / `white-back.webp` | Blanco | Frente / espalda |
+| `black-front.webp` / `black-back.webp` | Negro | Frente / espalda |
+| `beige-front.webp` / `beige-back.webp` | Beige | Frente / espalda |
+| `gray-front.webp` / `gray-back.webp` | Gris jaspe | Frente / espalda |
+
+En el editor: **Frente / Espalda** cambia la vista; el selector de **color** cambia el mockup.

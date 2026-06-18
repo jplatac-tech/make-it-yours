@@ -6,7 +6,7 @@ export const PRODUCTS = {
     name: 'Camiseta unisex',
     description:
       'Prenda ligera unisex para volumen y eventos. Estampado DTF con colores vivos y buen detalle.',
-    price: 29,
+    price: 39900,
     type: 'TSHIRT' as const,
   },
   'hoodie-unisex': {
@@ -14,7 +14,7 @@ export const PRODUCTS = {
     name: 'Hoodie unisex',
     description:
       'Hoodie clásico con capucha: ideal para diseños en pecho y espalda. Punto medio en precio y presencia.',
-    price: 49,
+    price: 59900,
     type: 'HOODIE' as const,
   },
   'crewneck-unisex': {
@@ -22,7 +22,7 @@ export const PRODUCTS = {
     name: 'Crewneck unisex',
     description:
       'Nivel premium: algodón de mayor gramaje y corte oversize. Más estructura que un hoodie básico — por eso el precio es mayor.',
-    price: 55,
+    price: 69900,
     type: 'CREWNECK' as const,
   },
 } as const

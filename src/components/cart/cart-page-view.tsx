@@ -265,11 +265,6 @@ export function CartPageView() {
             </div>
           </div>
 
-          <p className="mb-6 text-sm text-neutral-600">
-            Al confirmar, abrimos WhatsApp con el resumen del carrito
-            {hasDraft ? ' y de tu diseño guardado' : ''}.
-          </p>
-
           <a
             id="checkout"
             href={wa.enabled ? wa.href : undefined}

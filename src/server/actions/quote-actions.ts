@@ -43,13 +43,17 @@ async function buildQuoteItemCreate(
   }
 }
 
+function formField(value: FormDataEntryValue | null) {
+  return value === null ? undefined : value
+}
+
 export async function submitQuoteRequest(formData: FormData) {
   try {
     const designItemsRaw = formData.get('designItemsJson')
     if (typeof designItemsRaw === 'string' && designItemsRaw.length > 2) {
       const multiParsed = multiQuoteRequestSchema.safeParse({
         quantityDesired: formData.get('quantityDesired'),
-        comments: formData.get('comments'),
+        comments: formField(formData.get('comments')),
         designItemsJson: designItemsRaw,
       })
 
@@ -124,13 +128,13 @@ export async function submitQuoteRequest(formData: FormData) {
       finalWidthIn: formData.get('finalWidthIn'),
       finalHeightIn: formData.get('finalHeightIn'),
       quantityDesired: formData.get('quantityDesired'),
-      comments: formData.get('comments'),
-      mockupDataUrl: formData.get('mockupDataUrl'),
-      technicalDataUrl: formData.get('technicalDataUrl'),
-      mockupDataUrl_FRONT: formData.get('mockupDataUrl_FRONT'),
-      mockupDataUrl_BACK: formData.get('mockupDataUrl_BACK'),
-      technicalDataUrl_FRONT: formData.get('technicalDataUrl_FRONT'),
-      technicalDataUrl_BACK: formData.get('technicalDataUrl_BACK'),
+      comments: formField(formData.get('comments')),
+      mockupDataUrl: formField(formData.get('mockupDataUrl')),
+      technicalDataUrl: formField(formData.get('technicalDataUrl')),
+      mockupDataUrl_FRONT: formField(formData.get('mockupDataUrl_FRONT')),
+      mockupDataUrl_BACK: formField(formData.get('mockupDataUrl_BACK')),
+      technicalDataUrl_FRONT: formField(formData.get('technicalDataUrl_FRONT')),
+      technicalDataUrl_BACK: formField(formData.get('technicalDataUrl_BACK')),
     })
 
     if (!parsed.success) {
@@ -180,10 +184,10 @@ export async function submitQuoteDelivery(formData: FormData) {
     const parsed = quoteDeliverySchema.safeParse({
       quoteId: formData.get('quoteId'),
       customerName: formData.get('customerName'),
-      customerEmail: formData.get('customerEmail'),
+      customerEmail: formField(formData.get('customerEmail')),
       customerWhatsapp: formData.get('customerWhatsapp'),
-      neededBy: formData.get('neededBy'),
-      deliveryNotes: formData.get('deliveryNotes'),
+      neededBy: formField(formData.get('neededBy')),
+      deliveryNotes: formField(formData.get('deliveryNotes')),
     })
 
     if (!parsed.success) {

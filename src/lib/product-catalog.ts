@@ -1,5 +1,6 @@
 import { CREWNECK_UNISEX_MOCKUPS } from './mockup-assets'
 import { PRODUCT_COLORS, PRODUCTS, type ProductSlug } from './products'
+import { formatPrice } from './utils'
 
 /** Fotos por defecto si no hay looks sincronizados */
 export const CATALOG_PRODUCT_IMAGES: Record<ProductSlug, string> = {
@@ -127,7 +128,7 @@ export function filterCatalogProducts(
 }
 
 export function formatCatalogPrice(value: number) {
-  return `$ ${value.toLocaleString('es-CO')}`
+  return formatPrice(value)
 }
 
 /** @deprecated Catálogo unificado con filtros — ya no se usan filas duplicadas */

@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+const optionalString = z.string().nullish()
+
 export const quoteRequestSchema = z.object({
   productSlug: z.enum(['camiseta-unisex', 'hoodie-unisex', 'crewneck-unisex']),
   productColor: z.enum(['BLACK', 'WHITE', 'BEIGE', 'HEATHER_GRAY']),
@@ -12,26 +14,24 @@ export const quoteRequestSchema = z.object({
     .number()
     .int()
     .min(1, 'La cantidad debe ser mayor a 0'),
-  comments: z.string().optional(),
-  mockupDataUrl: z.string().optional(),
-  technicalDataUrl: z.string().optional(),
-  mockupDataUrl_FRONT: z.string().optional(),
-  mockupDataUrl_BACK: z.string().optional(),
-  technicalDataUrl_FRONT: z.string().optional(),
-  technicalDataUrl_BACK: z.string().optional(),
+  comments: optionalString,
+  mockupDataUrl: optionalString,
+  technicalDataUrl: optionalString,
+  mockupDataUrl_FRONT: optionalString,
+  mockupDataUrl_BACK: optionalString,
+  technicalDataUrl_FRONT: optionalString,
+  technicalDataUrl_BACK: optionalString,
 })
 
 export const quoteDeliverySchema = z.object({
   quoteId: z.string().min(1),
   customerName: z.string().min(2, 'Indica tu nombre'),
   customerEmail: z
-    .string()
-    .email('Correo inválido')
-    .optional()
-    .or(z.literal('')),
+    .union([z.string().email('Correo inválido'), z.literal('')])
+    .nullish(),
   customerWhatsapp: z.string().min(8, 'Indica un WhatsApp válido'),
-  neededBy: z.string().optional().or(z.literal('')),
-  deliveryNotes: z.string().optional(),
+  neededBy: optionalString,
+  deliveryNotes: optionalString,
 })
 
 export type QuoteRequestInput = z.infer<typeof quoteRequestSchema>
@@ -47,7 +47,7 @@ export const multiQuoteRequestSchema = z.object({
     .number()
     .int()
     .min(1, 'La cantidad debe ser mayor a 0'),
-  comments: z.string().optional(),
+  comments: optionalString,
   designItemsJson: z
     .string()
     .min(2, 'Debe incluir al menos una prenda con diseño'),
