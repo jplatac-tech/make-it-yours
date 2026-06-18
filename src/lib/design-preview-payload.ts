@@ -1,6 +1,7 @@
 import { ensureShapeLayers } from './shape-layers'
 import { getZonesWithDesign, parseDesignPayload } from './export-design'
 import {
+  getLineItemsWithDesign,
   lineItemToDesignJson,
   parseEditorSession,
 } from './design-storage'
@@ -13,8 +14,9 @@ export function resolveDesignPreviewPayload(designJson: string | null) {
   if (!designJson) return null
 
   const session = parseEditorSession(designJson)
-  if (session?.items.length === 1) {
-    return parseDesignPayload(lineItemToDesignJson(session.items[0]))
+  const withDesign = getLineItemsWithDesign(session)
+  if (withDesign.length >= 1) {
+    return parseDesignPayload(lineItemToDesignJson(withDesign[0]))
   }
 
   return parseDesignPayload(designJson)

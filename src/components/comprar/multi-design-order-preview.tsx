@@ -30,7 +30,7 @@ export function MultiDesignOrderPreview({ designJson }: Props) {
   if (items.length === 0) return null
 
   return (
-    <div className="card mb-6 space-y-6 overflow-hidden p-4 sm:p-5">
+    <div className="card mb-6 space-y-6 overflow-visible p-4 sm:p-5">
       <div>
         <p className="text-xs font-semibold tracking-wide text-neutral-500 uppercase">
           Vista previa

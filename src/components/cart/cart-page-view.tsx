@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useAppState, type CartItem } from '../app-state/app-state-provider'
 import { useNavWhatsAppHref } from '../../hooks/use-nav-whatsapp-href'
@@ -10,6 +11,7 @@ import {
   getCartProductDescription,
   getCartProductImage,
 } from '../../lib/cart-display'
+import { newCheckoutId, saveCheckoutDraft } from '../../lib/checkout-order'
 import {
   hasDesignElements,
   loadDesign,
@@ -168,10 +170,27 @@ function DesignDraftBanner() {
 }
 
 export function CartPageView() {
+  const router = useRouter()
   const { cartItems, totalPrice, removeFromCart, updateCartQuantity, profile } =
     useAppState()
   const wa = useNavWhatsAppHref()
   const [hasDraft, setHasDraft] = useState(false)
+
+  function startCheckout() {
+    if (cartItems.length === 0) return
+    saveCheckoutDraft({
+      id: newCheckoutId(),
+      source: 'carrito',
+      lines: cartItems.map((item) => ({
+        productName: item.name,
+        size: item.size,
+        quantity: item.quantity,
+        unitPrice: item.price,
+      })),
+      createdAt: new Date().toISOString(),
+    })
+    router.push('/carrito/pago')
+  }
 
   useEffect(() => {
     const read = () => setHasDraft(hasDesignElements(loadDesign()))
@@ -265,18 +284,26 @@ export function CartPageView() {
             </div>
           </div>
 
-          <a
+          <button
+            type="button"
             id="checkout"
+            onClick={startCheckout}
+            className="flex min-h-[52px] w-full items-center justify-center rounded-full bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-800"
+          >
+            Pagar ahora
+          </button>
+
+          <a
             href={wa.enabled ? wa.href : undefined}
             target="_blank"
             rel="noopener noreferrer"
             aria-disabled={!wa.enabled}
             className={
-              'flex min-h-[52px] w-full items-center justify-center rounded-full bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-800 ' +
+              'mt-3 flex min-h-[48px] w-full items-center justify-center rounded-full border border-neutral-300 bg-white text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50 ' +
               (wa.enabled ? '' : ' pointer-events-none opacity-40')
             }
           >
-            Confirmar por WhatsApp
+            Cotizar por WhatsApp
           </a>
 
           <Link

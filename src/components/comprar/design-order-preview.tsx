@@ -24,7 +24,7 @@ export function DesignOrderPreview({ designJson }: Props) {
   )
 
   return (
-    <div className="card mb-6 overflow-hidden p-4 sm:p-5">
+    <div className="card mb-6 overflow-visible p-4 sm:p-5">
       <p className="text-xs font-semibold tracking-wide text-neutral-500 uppercase">
         Vista previa
       </p>

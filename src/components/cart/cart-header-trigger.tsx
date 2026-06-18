@@ -5,19 +5,21 @@ import { useAppState } from '../app-state/app-state-provider'
 import { HeaderPopover } from '../layout/header-popover'
 import { CartDropdown } from './cart-dropdown'
 
-function BagIcon({ className }: { className?: string }) {
+function CartIcon({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
       className={className ?? 'h-6 w-6'}
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.5}
+      strokeWidth={1.75}
+      strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M8 7V6a4 4 0 118 0v1" />
-      <path d="M5 7h14l-1.2 12H6.2L5 7z" />
+      <circle cx="9" cy="20" r="1.25" fill="currentColor" stroke="none" />
+      <circle cx="17" cy="20" r="1.25" fill="currentColor" stroke="none" />
+      <path d="M3 3h2l1.2 10.2a1.5 1.5 0 001.5 1.3h9.1a1.5 1.5 0 001.45-1.1L19 8H6.2" />
     </svg>
   )
 }
@@ -66,7 +68,7 @@ export function CartHeaderTrigger({
         onClick={() => setOpen((o) => !o)}
         className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full transition duration-200 hover:opacity-100 sm:h-10 sm:w-10 ${iconClassName} ${isDark ? 'hover:bg-white/10' : 'hover:bg-neutral-100'}`}
       >
-        <BagIcon />
+        <CartIcon />
         {totalItems > 0 ? (
           <span
             className={

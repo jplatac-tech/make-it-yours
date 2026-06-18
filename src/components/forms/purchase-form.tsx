@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
@@ -19,7 +20,12 @@ import {
   lineItemToDesignJson,
   parseEditorSession,
 } from '../../lib/design-storage'
-import { getDesignLabel, getDesignRefId } from '../../lib/design-ids'
+import { getDesignRefId } from '../../lib/design-ids'
+import {
+  newCheckoutId,
+  saveCheckoutDraft,
+  type CheckoutLine,
+} from '../../lib/checkout-order'
 import {
   DEFAULT_PRODUCT_SIZE,
   getPrintZone,
@@ -33,11 +39,12 @@ import {
 } from '../../lib/products'
 
 type Props = {
-  /** JSON completo de la sesión del editor (v2) o diseño legacy */
   designJson: string
 }
 
 export function PurchaseForm({ designJson }: Props) {
+  const router = useRouter()
+  const formRef = useRef<HTMLFormElement>(null)
   const session = useMemo(() => parseEditorSession(designJson), [designJson])
   const lineItems = useMemo(
     () => getLineItemsWithDesign(session),
@@ -76,7 +83,6 @@ export function PurchaseForm({ designJson }: Props) {
             : productName
         return {
           key: item.id,
-          title: getDesignLabel(item.id),
           refId: getDesignRefId(item.id),
           name,
           color: getProductColorLabel(item.productColor),
@@ -87,37 +93,62 @@ export function PurchaseForm({ designJson }: Props) {
 
     const design = legacyDesign ?? parseDesignPayload(lineItemToDesignJson(lineItems[0]!))
     const productColor = (design?.productColor ?? 'WHITE') as ProductColorValue
-    const zonesWithDesign = getZonesWithDesign(design)
-    const zoneSummary = zonesWithDesign
-      .map((z) => getPrintZone(z)?.label ?? z)
-      .join(' y ')
-
     const active = lineItems[0]
-    const designRef = active ? getDesignRefId(active.id) : null
 
     return [
       {
         key: 'single',
-        title: active ? getDesignLabel(active.id) : 'Del editor',
-        refId: designRef,
+        refId: active ? getDesignRefId(active.id) : null,
         name: productName,
         color: getProductColorLabel(productColor),
-        zones: zoneSummary,
+        zones: undefined as string | undefined,
       },
     ]
   }, [isMulti, lineItems, legacyDesign, productName])
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function readFormValues(form: HTMLFormElement) {
+    const formData = new FormData(form)
+    const quantityDesired = Math.max(
+      1,
+      Number.parseInt(String(formData.get('quantityDesired') ?? '1'), 10) || 1,
+    )
+    const comments = String(formData.get('comments') ?? '').trim()
+    return { quantityDesired, comments }
+  }
+
+  function buildCheckoutLines(quantityDesired: number): CheckoutLine[] {
+    if (isMulti) {
+      return lineItems.map((item) => ({
+        designId: getDesignRefId(item.id),
+        productName:
+          item.productSlug in PRODUCTS
+            ? PRODUCTS[item.productSlug as ProductSlug].name
+            : productName,
+        color: getProductColorLabel(item.productColor),
+        size: productSize,
+        quantity: 1,
+        unitPrice: PRODUCTS[item.productSlug as ProductSlug]?.price ?? 0,
+      }))
+    }
+
+    return [
+      {
+        designId: lineItems[0] ? getDesignRefId(lineItems[0].id) : undefined,
+        productName,
+        color: editorSummary[0]?.color,
+        size: productSize,
+        quantity: quantityDesired,
+        unitPrice: PRODUCTS[singleSlug].price,
+      },
+    ]
+  }
+
+  function handlePay(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setPending(true)
     setMessage(null)
 
-    const formData = new FormData(event.currentTarget)
-    const quantityRaw = formData.get('quantityDesired')
-    const quantityDesired = Math.max(
-      1,
-      Number.parseInt(String(quantityRaw ?? '1'), 10) || 1,
-    )
+    const { quantityDesired, comments } = readFormValues(event.currentTarget)
 
     if (isMulti && quantityDesired < lineItems.length) {
       setMessage(`La cantidad mínima es ${lineItems.length} prendas`)
@@ -125,7 +156,36 @@ export function PurchaseForm({ designJson }: Props) {
       return
     }
 
-    const comments = String(formData.get('comments') ?? '').trim()
+    const draft = {
+      id: newCheckoutId(),
+      source: 'comprar' as const,
+      lines: buildCheckoutLines(quantityDesired),
+      designJson,
+      comments: comments || undefined,
+      createdAt: new Date().toISOString(),
+    }
+
+    saveCheckoutDraft(draft)
+    trackEvent('checkout_started', {
+      source: 'comprar',
+      garmentCount: lineItems.length,
+    })
+    router.push('/comprar/pago')
+  }
+
+  function handleWhatsApp() {
+    const form = formRef.current
+    if (!form) return
+    setPending(true)
+    setMessage(null)
+
+    const { quantityDesired, comments } = readFormValues(form)
+
+    if (isMulti && quantityDesired < lineItems.length) {
+      setMessage(`La cantidad mínima es ${lineItems.length} prendas`)
+      setPending(false)
+      return
+    }
 
     trackEvent('quote_submitted', {
       productSlug: singleSlug,
@@ -141,12 +201,11 @@ export function PurchaseForm({ designJson }: Props) {
         productName,
       }),
     )
-
     setPending(false)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form ref={formRef} className="space-y-5" onSubmit={handlePay}>
       <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
         <p className="font-medium text-neutral-900">
           {isMulti
@@ -156,17 +215,13 @@ export function PurchaseForm({ designJson }: Props) {
         <ul className="mt-2 space-y-3">
           {editorSummary.map((row) => (
             <li key={row.key} className="border-t border-neutral-200/80 pt-2 first:border-0 first:pt-0">
-              {isMulti ? (
-                <p className="text-xs font-semibold tracking-wide text-neutral-500 uppercase">
-                  {row.title}
-                </p>
-              ) : row.refId ? (
+              {row.refId ? (
                 <p className="text-xs font-semibold tracking-wide text-violet-700 uppercase">
                   {row.refId}
                 </p>
               ) : null}
               <p>
-                {isMulti ? 'Prenda' : 'Producto'}:{' '}
+                Producto:{' '}
                 <span className="text-neutral-900">{row.name}</span>
               </p>
               <p>
@@ -244,11 +299,17 @@ export function PurchaseForm({ designJson }: Props) {
       />
 
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending
-          ? 'Abriendo WhatsApp...'
-          : isMulti
-            ? `Cotizar ${lineItems.length} prendas por WhatsApp`
-            : 'Cotizar por WhatsApp'}
+        {pending ? 'Preparando pago…' : 'Pagar ahora'}
+      </Button>
+
+      <Button
+        type="button"
+        variant="secondary"
+        className="w-full"
+        disabled={pending}
+        onClick={handleWhatsApp}
+      >
+        Cotizar por WhatsApp
       </Button>
 
       {message ? <p className="text-sm text-red-600">{message}</p> : null}
