@@ -12,6 +12,11 @@ import {
   loadCheckoutDraft,
   type CheckoutDraft,
 } from '../../lib/checkout-order'
+import {
+  LAST_ORDER_STORAGE_KEY,
+  notifyStoreOrderViaWhatsApp,
+  uploadDesignPreviewImages,
+} from '../../lib/order-whatsapp-notify'
 import { formatPrice } from '../../lib/utils'
 import {
   formatCardCvcInput,
@@ -122,20 +127,45 @@ export function CheckoutPaymentFlow() {
     setFieldErrors({})
     setAnimateKey((k) => k + 1)
     setStep('processing')
-    await new Promise((r) => setTimeout(r, 2200))
+    await new Promise((r) => setTimeout(r, 1200))
+
+    const previewLinks = draft.designJson
+      ? await uploadDesignPreviewImages(draft.id, draft.designJson)
+      : []
 
     if (typeof window !== 'undefined') {
       sessionStorage.setItem(
-        'makeityours-last-order',
+        LAST_ORDER_STORAGE_KEY,
         JSON.stringify({
-          ...draft,
+          orderId: draft.id,
+          lines: draft.lines,
+          total: checkoutDraftTotal(draft),
+          comments: draft.comments,
+          designJson: draft.designJson,
+          previewLinks,
           paidAt: new Date().toISOString(),
           customerName,
-          total: checkoutDraftTotal(draft),
+          customerEmail,
+          customerPhone,
+          address,
         }),
       )
     }
+
     clearCheckoutDraft()
+
+    await notifyStoreOrderViaWhatsApp({
+      orderId: draft.id,
+      lines: draft.lines,
+      total: checkoutDraftTotal(draft),
+      comments: draft.comments,
+      previewLinks,
+      customerName,
+      customerEmail,
+      customerPhone,
+      address,
+    })
+
     router.push(`/pedido/exito?order=${encodeURIComponent(draft.id)}&paid=1`)
   }
 
@@ -457,7 +487,7 @@ export function CheckoutPaymentFlow() {
               Procesando pago…
             </p>
             <p className="mt-2 text-sm text-neutral-600">
-              Verificando tu pago…
+              Generando vista previa y abriendo WhatsApp…
             </p>
           </div>
         ) : null}

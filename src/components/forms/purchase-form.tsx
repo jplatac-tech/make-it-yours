@@ -8,9 +8,8 @@ import { Textarea } from '../ui/textarea'
 import { trackEvent } from '../../lib/analytics'
 import { buildEditorPath } from '../../lib/editor-url'
 import {
-  formatPurchaseQuoteMessage,
-  openStoreWhatsApp,
-} from '../../lib/whatsapp'
+  notifyStoreOrderViaWhatsApp,
+} from '../../lib/order-whatsapp-notify'
 import {
   getZonesWithDesign,
   parseDesignPayload,
@@ -173,7 +172,7 @@ export function PurchaseForm({ designJson }: Props) {
     router.push('/comprar/pago')
   }
 
-  function handleWhatsApp() {
+  async function handleWhatsApp() {
     const form = formRef.current
     if (!form) return
     setPending(true)
@@ -192,15 +191,24 @@ export function PurchaseForm({ designJson }: Props) {
       garmentCount: lineItems.length,
     })
 
-    openStoreWhatsApp(
-      formatPurchaseQuoteMessage({
-        designJson,
-        productSize,
-        quantityDesired,
-        comments: comments || undefined,
-        productName,
-      }),
+    const orderId = newCheckoutId()
+    const lines = buildCheckoutLines(quantityDesired)
+    const total = lines.reduce(
+      (sum, line) => sum + line.unitPrice * line.quantity,
+      0,
     )
+
+    try {
+      await notifyStoreOrderViaWhatsApp({
+        orderId,
+        lines,
+        total,
+        comments: comments || undefined,
+        designJson,
+      })
+    } catch {
+      setMessage('No se pudo abrir WhatsApp. Intenta de nuevo.')
+    }
     setPending(false)
   }
 
@@ -309,7 +317,7 @@ export function PurchaseForm({ designJson }: Props) {
         disabled={pending}
         onClick={handleWhatsApp}
       >
-        Cotizar por WhatsApp
+        {pending ? 'Abriendo WhatsApp…' : 'Cotizar por WhatsApp'}
       </Button>
 
       {message ? <p className="text-sm text-red-600">{message}</p> : null}

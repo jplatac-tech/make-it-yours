@@ -3,31 +3,35 @@
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
-import {
-  buildWhatsAppUrl,
-  formatOrderSentWhatsAppMessage,
-} from '../../../lib/whatsapp'
+import { buildWhatsAppUrl } from '../../../lib/whatsapp'
 import { STORE_WHATSAPP_DISPLAY } from '../../../lib/constants'
+import {
+  formatCheckoutOrderWhatsAppMessage,
+  loadLastOrderFromSession,
+} from '../../../lib/order-whatsapp-notify'
 import { formatPrice } from '../../../lib/utils'
 
 function PedidoExitoContent() {
   const searchParams = useSearchParams()
   const paid = searchParams.get('paid') === '1'
   const orderId = searchParams.get('order')
-  const whatsappHref = buildWhatsAppUrl(formatOrderSentWhatsAppMessage())
+  const [whatsappHref, setWhatsappHref] = useState<string | null>(null)
   const [paidTotal, setPaidTotal] = useState<number | null>(null)
+  const [previewCount, setPreviewCount] = useState(0)
 
   useEffect(() => {
-    if (!paid) return
     try {
-      const raw = sessionStorage.getItem('makeityours-last-order')
-      if (!raw) return
-      const parsed = JSON.parse(raw) as { total?: number }
-      if (typeof parsed.total === 'number') setPaidTotal(parsed.total)
+      const order = loadLastOrderFromSession()
+      if (!order) return
+      setWhatsappHref(
+        buildWhatsAppUrl(formatCheckoutOrderWhatsAppMessage(order)),
+      )
+      if (typeof order.total === 'number') setPaidTotal(order.total)
+      setPreviewCount(order.previewLinks?.length ?? 0)
     } catch {
       /* ignore */
     }
-  }, [paid])
+  }, [])
 
   return (
     <main className="container flex min-h-0 flex-1 items-center justify-center py-12 sm:py-16">
@@ -56,18 +60,18 @@ function PedidoExitoContent() {
 
         <p className="mt-4 text-neutral-600">
           {paid
-            ? `Tu pago fue registrado${paidTotal != null ? ` por ${formatPrice(paidTotal)}` : ''}. Te contactaremos para coordinar la producción.`
+            ? `Tu pago fue registrado${paidTotal != null ? ` por ${formatPrice(paidTotal)}` : ''}. Se abrió WhatsApp con el resumen del pedido${previewCount > 0 ? ' y el enlace a la vista previa de tu diseño' : ''}. Solo falta que pulses *Enviar* en el chat (${STORE_WHATSAPP_DISPLAY}).`
             : `Revisaremos tu prenda y te contactaremos con los siguientes pasos. Si WhatsApp no se abrió solo, usa el botón de abajo (${STORE_WHATSAPP_DISPLAY}).`}
         </p>
 
-        {!paid ? (
+        {whatsappHref ? (
           <a
             href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-primary mt-8 inline-flex"
           >
-            Continuar por WhatsApp
+            {paid ? 'Reenviar pedido por WhatsApp' : 'Continuar por WhatsApp'}
           </a>
         ) : null}
 
